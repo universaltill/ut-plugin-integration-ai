@@ -1,0 +1,20 @@
+{
+  "id": "com.universaltill.integration-ai",
+  "name": "AI Assistant (self-hosted)",
+  "version": "1.0.0",
+  "description": "Turns on the till's AI features — camera item identification and Ask-your-till — against YOUR OWN Ollama server. Point the endpoint setting at Ollama on this machine, a store mini-PC or your homelab. Nothing leaves your infrastructure; uninstall and AI disappears.",
+  "author": "Universal Till",
+  "website": "https://universaltill.com",
+  "canonical_type": "integration",
+  "runtime": "none",
+  "device_arch": "any",
+  "min_pos_version": "1.0.0",
+  "permissions": [],
+  "locales": ["en-US"],
+  "entries": [],
+  "settings": [
+    { "key": "endpoint", "default_value": "http://localhost:11434", "scope": "global" },
+    { "key": "vision_model", "default_value": "llama3.2-vision", "scope": "global" },
+    { "key": "ask_model", "default_value": "llama3.2", "scope": "global" }
+  ]
+}
