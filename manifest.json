@@ -1,8 +1,8 @@
 {
   "id": "com.universaltill.integration-ai",
   "name": "AI Assistant (self-hosted)",
-  "version": "1.0.1",
-  "description": "Turns on the till's AI features \u2014 camera item identification and Ask-your-till \u2014 against YOUR OWN Ollama server. Point the endpoint setting at Ollama on this machine, a store mini-PC or your homelab. Nothing leaves your infrastructure; uninstall and AI disappears.",
+  "version": "1.0.2",
+  "description": "Turns on the till's AI features — camera item identification and Ask-your-till — against YOUR OWN Ollama server. Point the endpoint setting at Ollama on this machine, a store mini-PC or your homelab. Nothing leaves your infrastructure; uninstall and AI disappears.",
   "author": "Universal Till",
   "website": "https://universaltill.com",
   "canonical_type": "integration",

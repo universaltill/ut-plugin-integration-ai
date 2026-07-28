@@ -4,6 +4,9 @@ name: Release
 # same repo scripts used locally (scripts/package.sh, scripts/publish.sh,
 # scripts/approve.sh); no release logic lives in YAML.
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
@@ -41,6 +44,22 @@ jobs:
 
       - name: Package release artifact
         run: scripts/package.sh
+
+      - name: Create GitHub Release (direct-download link for self-hosters)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          id=$(python3 -c "import json;print(json.load(open('manifest.json'))['id'])")
+          version=$(python3 -c "import json;print(json.load(open('manifest.json'))['version'])")
+          artifact=$(ls dist/*_universal.tar.gz)
+          cp "$artifact" dist/latest.tar.gz
+          cp "${artifact}.sha256" dist/latest.tar.gz.sha256
+          gh release create "${GITHUB_REF_NAME}" \
+            "$artifact" "${artifact}.sha256" dist/latest.tar.gz dist/latest.tar.gz.sha256 \
+            --title "${id} ${version}" \
+            --notes "Built from tag ${GITHUB_REF_NAME}. releases/latest/download/latest.tar.gz always points at whichever release is newest."
 
       - name: Upload artifact to workflow run
         uses: actions/upload-artifact@v4
