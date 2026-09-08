@@ -34,8 +34,8 @@ Set `provider` to `claude` and enter your **own** Anthropic API key in
 
 - **What leaves the shop.** With a hosted provider, what the AI features
   work on is sent to that provider's servers (Anthropic, United States):
-  for camera identify, the product photo plus your catalog's item names
-  and reference photos; and once a hosted provider supports Ask your
+  for camera identify, the product photo plus your catalog's item names,
+  SKUs and reference photos; and once a hosted provider supports Ask your
   till, your questions together with the sales and stock figures used to
   answer them. The settings page shows this notice above the key field.
   Self-hosted keeps all of it on your own hardware.
