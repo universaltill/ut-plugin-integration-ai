@@ -19,36 +19,39 @@ API key — see [Hosted provider (opt-in)](#hosted-provider-opt-in) below.
 
 | key | default | meaning |
 |---|---|---|
-| `provider` | `self_hosted` | `self_hosted` (Ollama, the default) or `claude` (hosted, needs `api_key`). Any other value behaves as `self_hosted`. |
+| `provider` | `self_hosted` | `self_hosted` (Ollama, the default), `claude` or `openai` (both hosted, need `api_key`). Any other value behaves as `self_hosted`. |
 | `endpoint` | `http://localhost:11434` | your Ollama server URL (self-hosted only) |
-| `vision_model` | `llama3.2-vision` | model for camera identify — with `provider = claude` this names the Claude model instead (blank = the host's default, currently `claude-haiku-4-5`) |
-| `ask_model` | `llama3.2` | tool-capable model for Ask your till (self-hosted only) |
-| `api_key` | *(empty)* | your own API key for the hosted provider. Stored masked and encrypted at rest; only used when `provider = claude`. |
+| `vision_model` | `llama3.2-vision` | model for camera identify — with a hosted `provider` this names that provider's model instead (blank = the host's default: `claude-haiku-4-5` for `claude`, `gpt-4o-mini` for `openai`) |
+| `ask_model` | `llama3.2` | tool-capable model for Ask your till — self-hosted, and (as of this version) `openai` too; `claude` has no ask loop yet so this setting has no effect there (blank = `gpt-4o-mini` for `openai`) |
+| `api_key` | *(empty)* | your own API key for the hosted provider. Stored masked and encrypted at rest; only used when `provider = claude` or `provider = openai`. |
 
 On the Ollama machine: `ollama pull llama3.2-vision && ollama pull llama3.2`.
 
 ## Hosted provider (opt-in)
 
-Set `provider` to `claude` and enter your **own** Anthropic API key in
-`api_key`. This is a shop-chosen, shop-paid alternative:
+Set `provider` to `claude` or `openai` and enter your **own** API key for
+that vendor in `api_key`. This is a shop-chosen, shop-paid alternative:
 
 - **What leaves the shop.** With a hosted provider, what the AI features
-  work on is sent to that provider's servers (Anthropic, United States):
-  for camera identify, the product photo plus your catalog's item names,
-  SKUs and reference photos; and once a hosted provider supports Ask your
-  till, your questions together with the sales and stock figures used to
-  answer them. The settings page shows this notice above the key field.
-  Self-hosted keeps all of it on your own hardware.
+  work on is sent to that provider's servers (Anthropic or OpenAI, both
+  United States): for camera identify, the product photo plus your
+  catalog's item names, SKUs and reference photos. With `provider =
+  claude`, that's the only thing sent — Ask your till has no Claude
+  implementation yet (see below). With `provider = openai`, Ask your till
+  is also sent to OpenAI: your questions together with the sales and stock
+  figures used to answer them. The settings page shows this notice above
+  the key field. Self-hosted keeps all of it on your own hardware.
 - **Your account, your cost.** The key is your own account with that
   provider; you pay them directly. Universal Till holds no account with
   any AI vendor and nothing in the product depends on one being set.
-- **Fail-safe.** Only the exact value `claude` selects the hosted
-  provider. A typo, a different spelling or a provider the till doesn't
-  implement yet falls back to self-hosted — never forward to a paid API.
-  `claude` with no key leaves AI disabled (not silently Ollama).
-- **Today's coverage.** The hosted provider runs camera identify. Ask
-  your till has no hosted implementation yet, so it hides itself while
-  `provider = claude` instead of erroring.
+- **Fail-safe.** Only the exact values `claude` or `openai` select a
+  hosted provider. A typo, a different spelling or any other value falls
+  back to self-hosted — never forward to a paid API. `claude`/`openai`
+  with no key leaves AI disabled (not silently Ollama).
+- **Today's coverage.** `provider = openai` runs both camera identify and
+  Ask your till. `provider = claude` runs camera identify only — Ask your
+  till has no Claude implementation yet, so it hides itself instead of
+  erroring while `provider = claude`.
 - **Switching back.** Set `provider` to `self_hosted` (or clear it); the
   Ollama settings above apply again immediately.
 
