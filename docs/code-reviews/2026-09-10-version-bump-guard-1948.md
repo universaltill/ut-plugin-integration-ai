@@ -126,3 +126,19 @@ Design variant still needed before the Go/WASM plugins (`tax-de`,
 `package.sh` bundles a gitignored `bin/` build artifact, invisible to
 this guard's git-diff-based detection. `ut-plugin-integration-ai`'s
 non-array `package.sh` convention (the gap this PR closes) is now done.
+
+## Addendum (same-day follow-up, a separate small PR)
+
+A second concurrent Opus review pass (run independently, in its own
+isolated worktree, unaware of this record until after the fact) caught
+one more nit neither this record's pass nor N1–N6 above did:
+
+| # | Finding | Severity | Disposition |
+|---|---|---|---|
+| N7 | `CLAUDE.md`'s exemption sentence ("A PR touching only `docs/`, `.github/` or `scripts/` is exempt") is an incomplete restatement of the real allowlist-inverse rule — this PR's own `CLAUDE.md` edit wasn't covered by its own wording | nit | **Fixed** in a same-day follow-up PR — reworded to "A PR that touches none of those three files is exempt (`docs/`, `.github/`, `scripts/`, `CLAUDE.md`, …)". That follow-up also adds `.claude/worktrees/` to `.gitignore` (this was the first agent-review worktree ever created in this repo — same hygiene fix already applied in `ut-plugin-theme-{midnight,screen-top,buttons-left}`). |
+
+Two independent review passes landing on the same PR within minutes of
+each other, each catching something the other didn't, is worth noting
+plainly rather than quietly reconciling away: it's the concrete case
+for running the review as a genuinely fresh, independent pass rather
+than trusting a single verdict.
