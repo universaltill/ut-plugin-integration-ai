@@ -200,7 +200,13 @@ assert_fail_containing "manifest changed without version bump" "manifest.json" "
 # that line (not a hardcoded restatement of what we expect it to say) and
 # asserts every one is also covered by SHIPPED_PATTERNS in the real script,
 # so a real change to package.sh's bundle (e.g. adding a CHANGELOG.md) is
-# caught here instead of silently drifting undetected.
+# caught here instead of silently drifting undetected. Deliberately
+# one-directional (bundle subset-of SHIPPED_PATTERNS, never the reverse):
+# if package.sh's bundle ever SHRINKS (e.g. LICENSE stops being bundled),
+# this case still passes -- the guard just becomes over-strict (asks for a
+# bump on a file that no longer ships), which is noisy but fail-safe, never
+# silently missing a real shipped-file change (independent review,
+# ut-docs#1948 PR #6).
 tar_line=$(grep -m1 'tar -czf' "$PACKAGE_SH") || tar_line=""
 if [ -z "$tar_line" ]; then
     echo "FAIL [tar line mirror]: could not find package.sh's 'tar -czf \"\$OUT\" ...' line"
@@ -210,7 +216,12 @@ else
     # the bundled file list (e.g. 'manifest.json README.md LICENSE').
     bundle_body="${tar_line#*\$OUT\"}"
     read -r -a bundle_entries <<<"$bundle_body"
-    patterns=$(grep -oE "'[^']*'" "$REAL_SCRIPT" | tr -d "'")
+    # Scoped to the SHIPPED_PATTERNS=(...) block specifically -- grepping
+    # the whole script would also pick up unrelated single-quoted strings
+    # (printf format specifiers, the bare "." from IFS='.'), and a stray
+    # "." would spuriously match ANY bundled path, silently defeating this
+    # very check (independent review, ut-docs#1948 PR #6).
+    patterns=$(sed -n '/^SHIPPED_PATTERNS=(/,/^)/p' "$REAL_SCRIPT" | grep -oE "'[^']*'" | tr -d "'")
     mismatch=0
     for entry in "${bundle_entries[@]}"; do
         if ! grep -qxF "$entry" <<<"$patterns" && ! grep -qxF "${entry}/*" <<<"$patterns"; then

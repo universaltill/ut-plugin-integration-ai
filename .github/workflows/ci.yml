@@ -1,10 +1,23 @@
 name: CI
 on:
+  push:
+    branches: [main]
   pull_request:
+permissions:
+  contents: read
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate manifest
+        run: scripts/validate.sh
+      - name: Package (dry run)
+        run: scripts/package.sh
+
   version-bump:
-    # PR-only: this compares the PR's base/head, which push/schedule/
-    # workflow_dispatch events don't carry a meaningful pair for.
+    # PR-only: this compares the PR's base/head, which the push trigger
+    # above doesn't carry a meaningful pair for.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -13,7 +26,6 @@ jobs:
           # Need history back to the PR base, not just a shallow tip.
           fetch-depth: 0
       - name: Version-bump guard self-tests
-        if: always()
         run: scripts/check-version-bump.test.sh
       - name: Require a manifest.json version bump on shipped-file changes (ut-docs#1940)
         env:
