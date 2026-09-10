@@ -22,4 +22,5 @@ artifact, and `auto-tag-release.yml` only cuts a release when the version
 differs from the last tag; without a bump the change lands on `main` and
 then silently never ships (ut-docs#1940). Enforced by
 `scripts/check-version-bump.sh` (CI job `version-bump`, PRs only). A PR
-touching only `docs/`, `.github/` or `scripts/` is exempt.
+that touches none of those three files is exempt (`docs/`, `.github/`,
+`scripts/`, `CLAUDE.md`, …).
