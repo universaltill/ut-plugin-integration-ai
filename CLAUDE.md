@@ -14,3 +14,12 @@ other feature. `provider` stays a plain-text setting validated host-side
 manifest "select" field type or a second `api_key` setting for this; a
 future third vendor reuses the same two settings the same way. Release =
 tag v<version> matching manifest.json.
+
+**Any PR that touches a shipped file — `manifest.json`, `README.md`,
+`LICENSE` — must bump `manifest.json`'s `version` in the same PR.**
+`scripts/package.sh` bundles exactly those files into the release
+artifact, and `auto-tag-release.yml` only cuts a release when the version
+differs from the last tag; without a bump the change lands on `main` and
+then silently never ships (ut-docs#1940). Enforced by
+`scripts/check-version-bump.sh` (CI job `version-bump`, PRs only). A PR
+touching only `docs/`, `.github/` or `scripts/` is exempt.
