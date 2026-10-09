@@ -1,0 +1,21 @@
+{
+  "integration_ai.ask.title": "Kasanıza sorun",
+  "integration_ai.ask.hint": "Satışlar, stok veya kasa etkinliği hakkında sade bir dille sorun.",
+  "integration_ai.ask.question": "Sorunuz — örn. Bu hafta en çok ne satıldı?",
+  "integration_ai.ask.button": "Sor",
+  "integration_ai.ask.thinking": "Düşünülüyor…",
+  "integration_ai.ask.answer": "Yanıt",
+  "integration_ai.ask.error": "Asistan şu anda yanıt veremedi — YZ sunucusunun çalıştığını kontrol edip tekrar deneyin.",
+  "integration_ai.ask.question_invalid": "En fazla 500 karakterlik bir soru yazın.",
+  "integration_ai.ask.unavailable": "Kasanıza sorun, mevcut YZ Asistanı ayarlarıyla kullanılamıyor.",
+  "integration_ai.identify.reading_photo": "Fotoğraf okunuyor…",
+  "integration_ai.identify.reading_catalog": "Katalog taranıyor…",
+  "integration_ai.identify.reading_references": "Referans fotoğrafları yükleniyor…",
+  "integration_ai.identify.searching": "Tanınıyor…",
+  "integration_ai.identify.suggested": "Katalogda yok — önerilen ad:",
+  "integration_ai.identify.not_configured": "Kamerayla tanıma henüz ayarlanmadı: YZ sunucusu adresini veya API anahtarını YZ Asistanı eklentisinin ayarlarına girin.",
+  "integration_ai.identify.bad_photo": "Fotoğraf en fazla 4 MB boyutunda JPEG veya PNG olmalıdır.",
+  "integration_ai.identify.confidence.high": "Yakın eşleşme",
+  "integration_ai.identify.confidence.medium": "Olası eşleşme",
+  "integration_ai.identify.confidence.low": "Zayıf eşleşme"
+}

@@ -1,32 +1,56 @@
 #!/usr/bin/env bash
 #
 # Requires a manifest.json version bump on any PR that touches a shipped
-# file (ut-docs#1940, rolled out here per ut-docs#1948).
+# file (ut-docs#1940, rolled out here per ut-docs#1948; the compiled-plugin
+# variant from ut-plugin-tax-de since this plugin became a WASM module,
+# ut-docs#4032 -- before that it was config-only and shipped only
+# manifest.json, README.md and LICENSE).
 #
-# WHY THIS EXISTS: scripts/package.sh bundles manifest.json, README.md and
-# LICENSE into the marketplace release artifact. None of this repo's other
-# checks (validate, authors) look at the version field, so a PR that edits
-# README.md but forgets to bump manifest.json's version lands on main,
-# passes every check, and then SILENTLY NEVER SHIPS: auto-tag-release.yml
-# reads the unchanged version, sees v<version> already tagged/released, and
-# correctly does nothing. main and the marketplace diverge with no failing
-# signal anywhere. This exact failure has already needed hand repair
-# multiple times in the language-pack plugins (v1.1.32, v1.1.33->34, and
-# twice more on 2026-09-09 alone) — this repo hasn't hit it yet, but the
-# mechanism that causes it (package.sh's bundle vs. no CI check on version)
-# is identical here, hence the preventive rollout.
+# WHY THIS EXISTS: scripts/package.sh bundles manifest.json, README.md,
+# locales/ (when present) and bin/ (the compiled WASI module) into the
+# marketplace release artifact. None of this repo's other checks (build,
+# validate, authors) look at the version field, so a PR that changes what
+# ships but forgets to bump manifest.json's version lands on main, passes
+# every check, and then SILENTLY NEVER SHIPS: auto-tag-release.yml reads the
+# unchanged version, sees v<version> already tagged/released, and correctly
+# does nothing. main and the marketplace diverge with no failing signal
+# anywhere. Already needed hand repair at least three times in
+# ut-plugin-language-de/-es before that guard existed there (ut-docs#1940).
 #
-# WHAT COUNTS AS "SHIPPED": deliberately keyed off the same set
-# scripts/package.sh actually bundles, not "any file" -- a docs/code-reviews/
-# record or a workflow-only edit must never force a version bump. This repo's
-# package.sh has no `entries=(...)` array (unlike the theme/language-pack
-# plugins it was ported from) -- it hardcodes the bundled file list directly
-# in its `tar -czf "$OUT" ...` line, since this is a config-only plugin with
-# no assets/src at all. Keep this list mirrored to that line; nothing
-# enforces that automatically, so a change to package.sh's bundle needs a
-# matching edit here (and check-version-bump.test.sh's "tar line mirror"
-# case exists to catch drift between the two by re-reading package.sh's own
-# source).
+# WHAT COUNTS AS "SHIPPED" -- THE COMPILED-PLUGIN VARIANT: this repo builds
+# a WASI module (scripts/build.sh: `go build -o bin/plugin.wasm ./src`) and
+# package.sh's own entries=(...) line bundles that compiled `bin` directory
+# directly -- but `bin/` is gitignored (see .gitignore), so it can NEVER
+# appear in `git diff --name-only` no matter how much the plugin's behaviour
+# changed. Keying SHIPPED_PATTERNS off the literal bundled path, the way the
+# asset-only plugins (ut-plugin-language-{de,es}, ut-plugin-theme-*) do, is
+# therefore unsafe here -- it would silently never fire. Instead this keys
+# off the SOURCE that PRODUCES bin/plugin.wasm: every file under src/ (the
+# `go build ... ./src` argument), plus go.mod/go.sum (a dependency bump
+# changes the compiled binary without touching anything under src/ at all),
+# plus scripts/build.sh itself -- it is the BUILD RECIPE, so an edit to it
+# (a new -ldflags/-trimpath/-tags, a different GOOS/GOARCH or -o path)
+# changes the shipped binary while every file under src/ stays byte-identical
+# (verified as a real false negative in this guard's 2026-09-10 review).
+# See check-version-bump.test.sh's "entries mirror" case for how this is
+# verified against package.sh's and build.sh's own source, and
+# docs/code-reviews/ for the rollout card (ut-docs#1948) tracking which
+# other ut-plugin-* repos still need the same treatment.
+#
+# One accepted, deliberate over-approximation: `src/*` also matches
+# `*_test.go` files, which go build (not go test) never compiles into
+# bin/plugin.wasm -- a test-only change will ask for a version bump it does
+# not strictly need. That is a false positive (harmless extra bump), never
+# a false negative (a real behaviour change shipping unbumped) -- the
+# failure mode this guard exists to prevent -- so it is left as-is rather
+# than complicating SHIPPED_PATTERNS with an exclusion mechanism no other
+# repo in this rollout needs.
+#
+# Keep this list mirrored to package.sh's own `entries=(...)` line and
+# build.sh's own `go build` source argument -- nothing enforces that
+# automatically, so a change to either needs a matching edit here (and
+# check-version-bump.test.sh's "entries mirror" case exists to catch drift
+# between the three by re-reading package.sh's and build.sh's own source).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -34,6 +58,11 @@ SHIPPED_PATTERNS=(
     'manifest.json'
     'README.md'
     'LICENSE'
+    'locales/*'
+    'src/*'
+    'go.mod'
+    'go.sum'
+    'scripts/build.sh'
 )
 
 # BASE_SHA/HEAD_SHA follow the same convention as
@@ -72,7 +101,17 @@ MERGE_BASE=$(git merge-base "$BASE_SHA" "$HEAD_SHA") || {
 # core.quotePath=false so a shipped path with non-ASCII characters is
 # printed as a real UTF-8 path, not C-style-quoted octal escapes that would
 # never match SHIPPED_PATTERNS.
-changed_files=$(git -c core.quotePath=false diff --name-only "$MERGE_BASE" "$HEAD_SHA" -- .)
+#
+# --no-renames because rename detection (on by default since git 2.9) prints
+# only the DESTINATION path for a renamed file, which hides every rename OUT
+# of a shipped location: `git mv src/ai/f.go docs/f.go` deletes a
+# file from the compiled package but reports as a lone `docs/f.go`, and the
+# guard would answer "no shipped file changed" (verified as a real false
+# negative in this guard's 2026-09-10 review). With --no-renames the same
+# change reports as a delete + an add, so the src/ side is seen. Renames INTO
+# or WITHIN a shipped location were already caught either way (the
+# destination is the shipped path), so this only ever adds coverage.
+changed_files=$(git -c core.quotePath=false diff --no-renames --name-only "$MERGE_BASE" "$HEAD_SHA" -- .)
 
 shipped_changed=()
 while IFS= read -r f; do
@@ -123,12 +162,13 @@ fail_no_bump() {
         echo "Changed shipped file(s):"
         printf '  - %s\n' "${shipped_changed[@]}"
         echo ""
-        echo "Why this fails the build: scripts/package.sh bundles these files into"
-        echo "the release artifact, and auto-tag-release.yml only cuts a release when"
+        echo "Why this fails the build: scripts/package.sh bundles these files (or, for"
+        echo "src/**/go.mod/go.sum, the compiled bin/plugin.wasm they produce) into the"
+        echo "release artifact, and auto-tag-release.yml only cuts a release when"
         echo "manifest.json's version differs from the last tag. Without a genuinely new"
         echo "version, this change lands on main and then SILENTLY NEVER SHIPS -- the"
         echo "marketplace keeps serving the old artifact with no failing signal anywhere"
-        echo "(ut-docs#1940)."
+        echo "(ut-docs#1940, ut-docs#1948)."
         echo ""
         echo "Fix: bump manifest.json's \"version\" in this PR to ${2}."
     } >&2

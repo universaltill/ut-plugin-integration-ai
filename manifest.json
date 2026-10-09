@@ -1,21 +1,56 @@
 {
   "id": "com.universaltill.integration-ai",
   "name": "AI Assistant",
-  "version": "1.2.0",
-  "description": "Turns on the till's AI features — camera item identification and Ask-your-till. Self-hosted by default: point the endpoint setting at YOUR OWN Ollama server on this machine, a store mini-PC or your homelab, and nothing leaves your infrastructure. A shop that prefers a hosted provider can opt in by setting provider to claude or openai and entering its own API key — the shop's own account and cost, never a Universal Till account. Uninstall and AI disappears.",
+  "version": "2.0.0",
+  "description": "The till's AI features — Identify by camera on the sell screen and Ask your till on Reports — running inside this plugin. Self-hosted by default: point the endpoint setting at YOUR OWN Ollama server on this machine, a store mini-PC or your homelab, and nothing leaves your infrastructure. A shop that prefers a hosted provider can opt in by setting provider to claude or openai and entering its own API key — the shop's own account and cost, never a Universal Till account. Uninstall and AI disappears.",
   "author": "Universal Till",
   "website": "https://universaltill.com",
   "canonical_type": "integration",
-  "runtime": "none",
+  "runtime": "wasm",
+  "entrypoint": "./bin/plugin.wasm",
   "device_arch": "any",
   "min_pos_version": "1.0.0",
   "permissions": [
-    "ai.configure"
+    "events:receive",
+    "view:sales",
+    "view:inventory",
+    "view:audit",
+    "ui:page",
+    "ui:slot:reports.panels",
+    "net:@setting:endpoint",
+    "http:lan",
+    "net:api.openai.com",
+    "net:api.anthropic.com"
   ],
+  "views_used": [
+    "catalog.items.v1",
+    "sales.by_day.v1",
+    "items.top.v1",
+    "payments.breakdown.v1",
+    "stock.levels.v1",
+    "audit.summary.v1"
+  ],
+  "limits": {
+    "memory_mb": 128,
+    "long_call_s": 120
+  },
   "locales": [
-    "en-US"
+    "en-US",
+    "ar-SA",
+    "fa-IR",
+    "tr-TR"
   ],
-  "entries": [],
+  "entries": [
+    {
+      "type": "page",
+      "key": "ai-ask",
+      "label": "integration_ai.ask.title",
+      "route": "/plugin/integration-ai/ask",
+      "view": "ai.ask",
+      "slot": "reports.panels",
+      "sort_order": 10
+    }
+  ],
   "settings": [
     {
       "key": "provider",
@@ -25,7 +60,8 @@
     {
       "key": "endpoint",
       "default_value": "http://localhost:11434",
-      "scope": "global"
+      "scope": "global",
+      "type": "endpoint"
     },
     {
       "key": "vision_model",
@@ -42,6 +78,28 @@
       "default_value": "",
       "scope": "global",
       "type": "secret"
+    }
+  ],
+  "hooks": [
+    {
+      "event": "catalog.identify",
+      "action": "identify"
+    },
+    {
+      "event": "catalog.identify.confirmed",
+      "action": "identify.confirmed"
+    },
+    {
+      "event": "ui.view.ask",
+      "action": "view"
+    },
+    {
+      "event": "ui.action.ask",
+      "action": "view"
+    },
+    {
+      "event": "com.universaltill.integration-ai.ask",
+      "action": "ask"
     }
   ]
 }

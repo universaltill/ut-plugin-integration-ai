@@ -29,7 +29,7 @@ args=(
   --form "version=${VERSION}"
   --form "channel=${CHANNEL}"
   --form "expected_hash=${CHECKSUM}"
-  --form "release_notes=Theme release ${VERSION}"
+  --form "release_notes=Release ${VERSION}"
 )
 [ -n "${MARKETPLACE_LISTING_ID:-}" ] && args+=(--form "listing_id=${MARKETPLACE_LISTING_ID}")
 [ -n "${MARKETPLACE_UPLOAD_TOKEN:-}" ] && args+=(--header "Authorization: Bearer ${MARKETPLACE_UPLOAD_TOKEN}")
