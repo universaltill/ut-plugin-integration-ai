@@ -1,0 +1,21 @@
+{
+  "integration_ai.ask.title": "از صندوق خود بپرسید",
+  "integration_ai.ask.hint": "دربارهٔ فروش، موجودی یا فعالیت صندوق به زبان ساده بپرسید.",
+  "integration_ai.ask.question": "پرسش شما — مثلاً: این هفته چه چیزی بیشتر فروش رفت؟",
+  "integration_ai.ask.button": "بپرس",
+  "integration_ai.ask.thinking": "در حال فکر کردن…",
+  "integration_ai.ask.answer": "پاسخ",
+  "integration_ai.ask.error": "دستیار الان نتوانست پاسخ دهد — بررسی کنید سرور هوش مصنوعی روشن باشد و دوباره تلاش کنید.",
+  "integration_ai.ask.question_invalid": "پرسشی با حداکثر ۵۰۰ نویسه بنویسید.",
+  "integration_ai.ask.unavailable": "«از صندوق خود بپرسید» با تنظیمات کنونی دستیار هوش مصنوعی در دسترس نیست.",
+  "integration_ai.identify.reading_photo": "در حال خواندن عکس…",
+  "integration_ai.identify.reading_catalog": "در حال جستجو در فهرست کالاها…",
+  "integration_ai.identify.reading_references": "در حال بارگذاری عکس‌های مرجع…",
+  "integration_ai.identify.searching": "در حال شناسایی…",
+  "integration_ai.identify.suggested": "در فهرست کالاها نیست — نام پیشنهادی:",
+  "integration_ai.identify.not_configured": "شناسایی با دوربین هنوز راه‌اندازی نشده است: نشانی سرور هوش مصنوعی یا کلید API را در تنظیمات افزونهٔ دستیار هوش مصنوعی وارد کنید.",
+  "integration_ai.identify.bad_photo": "عکس باید JPEG یا PNG و حداکثر ۴ مگابایت باشد.",
+  "integration_ai.identify.confidence.high": "تطابق نزدیک",
+  "integration_ai.identify.confidence.medium": "تطابق احتمالی",
+  "integration_ai.identify.confidence.low": "تطابق بعید"
+}

@@ -1,6 +1,6 @@
 name: Release
 
-# Package and publish this payment plugin to the marketplace. CI orchestrates the
+# Package and publish this plugin to the marketplace. CI orchestrates the
 # same repo scripts used locally (scripts/package.sh, scripts/publish.sh,
 # scripts/approve.sh); no release logic lives in YAML.
 
@@ -29,7 +29,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate manifest + plugin manifest
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.27"
+
+      - name: Build WASI module
+        run: scripts/build.sh
+
+      - name: Validate manifest
         run: scripts/validate.sh
 
       - name: Verify tag matches manifest version

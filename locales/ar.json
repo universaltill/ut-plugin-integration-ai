@@ -1,0 +1,21 @@
+{
+  "integration_ai.ask.title": "اسأل صندوقك",
+  "integration_ai.ask.hint": "اسأل عن المبيعات أو المخزون أو نشاط الصندوق بكلمات بسيطة.",
+  "integration_ai.ask.question": "سؤالك — مثال: ما الأكثر مبيعاً هذا الأسبوع؟",
+  "integration_ai.ask.button": "اسأل",
+  "integration_ai.ask.thinking": "جارٍ التفكير…",
+  "integration_ai.ask.answer": "الإجابة",
+  "integration_ai.ask.error": "تعذّر على المساعد الإجابة الآن — تأكد من أن خادم الذكاء الاصطناعي يعمل وحاول مجدداً.",
+  "integration_ai.ask.question_invalid": "اكتب سؤالاً لا يتجاوز 500 حرف.",
+  "integration_ai.ask.unavailable": "ميزة «اسأل صندوقك» غير متاحة مع إعدادات مساعد الذكاء الاصطناعي الحالية.",
+  "integration_ai.identify.reading_photo": "جارٍ قراءة الصورة…",
+  "integration_ai.identify.reading_catalog": "جارٍ البحث في الكتالوج…",
+  "integration_ai.identify.reading_references": "جارٍ تحميل الصور المرجعية…",
+  "integration_ai.identify.searching": "جارٍ التعرّف…",
+  "integration_ai.identify.suggested": "غير موجود في الكتالوج — الاسم المقترح:",
+  "integration_ai.identify.not_configured": "التعرّف بالكاميرا غير مُعدّ بعد: أدخل عنوان خادم الذكاء الاصطناعي أو مفتاح API في إعدادات إضافة مساعد الذكاء الاصطناعي.",
+  "integration_ai.identify.bad_photo": "يجب أن تكون الصورة بصيغة JPEG أو PNG وبحجم لا يتجاوز 4 ميغابايت.",
+  "integration_ai.identify.confidence.high": "تطابق قوي",
+  "integration_ai.identify.confidence.medium": "تطابق محتمل",
+  "integration_ai.identify.confidence.low": "تطابق ضعيف"
+}

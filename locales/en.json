@@ -1,0 +1,21 @@
+{
+  "integration_ai.ask.title": "Ask your till",
+  "integration_ai.ask.hint": "Ask about sales, stock or till activity in plain words.",
+  "integration_ai.ask.question": "Your question — e.g. What sold best this week?",
+  "integration_ai.ask.button": "Ask",
+  "integration_ai.ask.thinking": "Thinking…",
+  "integration_ai.ask.answer": "Answer",
+  "integration_ai.ask.error": "The assistant could not answer right now — check that the AI server is running and try again.",
+  "integration_ai.ask.question_invalid": "Type a question of up to 500 characters.",
+  "integration_ai.ask.unavailable": "Ask your till is not available with the current AI Assistant settings.",
+  "integration_ai.identify.reading_photo": "Reading the photo…",
+  "integration_ai.identify.reading_catalog": "Looking through the catalog…",
+  "integration_ai.identify.reading_references": "Loading reference photos…",
+  "integration_ai.identify.searching": "Identifying…",
+  "integration_ai.identify.suggested": "Not in catalog — suggested name:",
+  "integration_ai.identify.not_configured": "Identify by camera is not set up yet: enter your AI server address or API key in the AI Assistant plugin's settings.",
+  "integration_ai.identify.bad_photo": "The photo must be a JPEG or PNG of at most 4 MB.",
+  "integration_ai.identify.confidence.high": "Close match",
+  "integration_ai.identify.confidence.medium": "Possible match",
+  "integration_ai.identify.confidence.low": "Unlikely match"
+}
