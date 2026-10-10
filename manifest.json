@@ -1,7 +1,7 @@
 {
   "id": "com.universaltill.integration-ai",
   "name": "AI Assistant",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "The till's AI features — Identify by camera on the sell screen and Ask your till on Reports — running inside this plugin. Self-hosted by default: point the endpoint setting at YOUR OWN Ollama server on this machine, a store mini-PC or your homelab, and nothing leaves your infrastructure. A shop that prefers a hosted provider can opt in by setting provider to claude or openai and entering its own API key — the shop's own account and cost, never a Universal Till account. Uninstall and AI disappears.",
   "author": "Universal Till",
   "website": "https://universaltill.com",
