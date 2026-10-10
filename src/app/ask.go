@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -23,12 +24,44 @@ const maxQuestionChars = 500
 // limit; 32 KiB is pages of text).
 const maxAnswerBytes = 32 << 10
 
-// shop grounds the system prompt. A plugin has no host function or view
-// for the shop's name or currency yet, so the prompt names the shop the way
-// core's own fallback did ("this shop", storeNameOrDefault) and the
-// currency generically. Two decimal places is right for most currencies;
-// for a zero-decimal one (JPY, KRW, …) the model may misplace the point.
-var shop = ai.ShopContext{StoreName: "this shop", CurrencyCode: "the shop's currency", CurrencyDecimals: 2}
+// shopContext grounds the system prompt in the till's own shop.context.v1
+// view (view:sales, no arguments: any argument is -4): store name, currency
+// code and decimals, locale. It starts from the generic wording core's own
+// fallback used ("this shop", storeNameOrDefault) and overrides each part
+// the view actually supplies. An older till does not know the view (-1):
+// the whole fallback stays and the answer is never blocked.
+func shopContext() ai.ShopContext {
+	shop := ai.ShopContext{StoreName: "this shop", CurrencyCode: "the shop's currency", CurrencyDecimals: 2}
+	raw, err := plugin.ViewQuery("shop.context.v1", map[string]any{})
+	if err != nil {
+		plugin.Logf("shop.context.v1 unavailable (%v): Ask uses the generic shop and currency wording", err)
+		return shop
+	}
+	var rows []struct {
+		StoreName        string `json:"store_name"`
+		CurrencyCode     string `json:"currency_code"`
+		CurrencyDecimals *int   `json:"currency_decimals"`
+		Locale           string `json:"locale"`
+	}
+	if err := json.Unmarshal(raw, &rows); err != nil || len(rows) != 1 {
+		plugin.Logf("shop.context.v1 returned no usable single row: Ask uses the generic shop and currency wording")
+		return shop
+	}
+	r := rows[0]
+	if n := strings.TrimSpace(r.StoreName); n != "" {
+		shop.StoreName = n
+	}
+	if c := strings.TrimSpace(r.CurrencyCode); c != "" {
+		shop.CurrencyCode = c
+	}
+	// Defensive bound: real currencies use 0–4 decimals; anything else is
+	// not trusted and keeps the default of 2.
+	if d := r.CurrencyDecimals; d != nil && *d >= 0 && *d <= 4 {
+		shop.CurrencyDecimals = *d
+	}
+	shop.Locale = r.Locale
+	return shop
+}
 
 // intArg reads a bounded integer tool argument (JSON numbers arrive as
 // float64); out-of-range or missing values fall back to def. The views are
@@ -208,7 +241,7 @@ func handleAskJob(e plugin.Event) (any, error) {
 		return askPanel(q, notice("error", "integration_ai.ask.question_invalid")), nil
 	}
 	progress(10, "integration_ai.ask.thinking")
-	answer, err := svc.Ask(q, shop, askTools())
+	answer, err := svc.Ask(q, shopContext(), askTools())
 	if err != nil {
 		plugin.Logf("ai ask failed: %v", err)
 		return askPanel(q, notice("error", "integration_ai.ask.error")), nil

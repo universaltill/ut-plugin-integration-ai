@@ -114,9 +114,10 @@ Known limits, compared with the till's built-in engine:
   panel is hidden by not answering; the till logs one warning line per
   Reports visit for that.
 
-- The assistant does not know the shop's name or currency yet (no plugin
-  access to them); it is told amounts are in minor units with two decimal
-  places, which is wrong for a zero-decimal currency such as JPY.
+- The assistant learns the shop's name and currency from the till's
+  `shop.context.v1` view. On an older till without that view it falls back
+  to "this shop" and amounts in minor units with two decimal places, which
+  is wrong for a zero-decimal currency such as JPY.
 - Reference photos come from the first 64 catalog items the till lets the
   plugin open per identify (the built-in engine looked through the whole
   catalog for 60 photos).
