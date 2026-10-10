@@ -32,6 +32,18 @@ for k, dv in want.items():
 if settings.get("api_key", {}).get("type") != "secret": errs.append("api_key must be type secret (ADR-0082)")
 if settings.get("endpoint", {}).get("type") != "endpoint": errs.append("endpoint must be type endpoint (ADR-0121 §2)")
 if settings.get("provider", {}).get("type"): errs.append("provider stays a plain-text setting (ADR-0126)")
+# Background removal (ut-docs#3126): the till calls the shop's rembg itself,
+# so these settings are plain text. A `type: "endpoint"` image_endpoint would
+# give this WASM plugin's http:lan egress to the rembg host it never needs
+# (least privilege; core validates the URL where it uses it).
+want_img = {"image_provider": "self_hosted", "image_endpoint": "", "image_model": "birefnet-general-lite"}
+for k, dv in want_img.items():
+    if k not in settings:
+        errs.append(f"setting {k} missing (the till reads it for background removal)")
+    elif settings[k].get("default_value") != dv:
+        errs.append(f"setting {k} default changed ({settings[k].get('default_value')!r} != {dv!r})")
+    elif settings[k].get("type"):
+        errs.append(f"{k} stays plain text: the till, not the plugin, calls rembg (no plugin egress to it)")
 hooks = {h.get("event") for h in m.get("hooks", [])}
 job = m["id"] + ".ask"
 for ev in ("catalog.identify", "catalog.identify.confirmed", "ui.view.ask", "ui.action.ask", job):

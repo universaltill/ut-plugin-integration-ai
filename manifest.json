@@ -1,8 +1,8 @@
 {
   "id": "com.universaltill.integration-ai",
   "name": "AI Assistant",
-  "version": "2.0.2",
-  "description": "The till's AI features — Identify by camera on the sell screen and Ask your till on Reports — running inside this plugin. Self-hosted by default: point the endpoint setting at YOUR OWN Ollama server on this machine, a store mini-PC or your homelab, and nothing leaves your infrastructure. A shop that prefers a hosted provider can opt in by setting provider to claude or openai and entering its own API key — the shop's own account and cost, never a Universal Till account. Uninstall and AI disappears.",
+  "version": "2.1.0",
+  "description": "The till's AI features — Identify by camera on the sell screen and Ask your till on Reports — running inside this plugin, plus the settings for background removal of item and category photos, which the till runs against YOUR OWN rembg service (image_endpoint) with an allowed open model (birefnet-general-lite or u2netp). Self-hosted by default: point the endpoint setting at YOUR OWN Ollama server on this machine, a store mini-PC or your homelab, and nothing leaves your infrastructure. A shop that prefers a hosted provider can opt in by setting provider to claude or openai and entering its own API key — the shop's own account and cost, never a Universal Till account. Uninstall and AI disappears.",
   "author": "Universal Till",
   "website": "https://universaltill.com",
   "canonical_type": "integration",
@@ -79,6 +79,21 @@
       "default_value": "",
       "scope": "global",
       "type": "secret"
+    },
+    {
+      "key": "image_provider",
+      "default_value": "self_hosted",
+      "scope": "global"
+    },
+    {
+      "key": "image_endpoint",
+      "default_value": "",
+      "scope": "global"
+    },
+    {
+      "key": "image_model",
+      "default_value": "birefnet-general-lite",
+      "scope": "global"
     }
   ],
   "hooks": [

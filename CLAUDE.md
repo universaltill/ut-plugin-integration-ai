@@ -17,7 +17,11 @@ comment wherever the plugin must differ.
   (`type: "endpoint"`), `vision_model`, `ask_model`, `api_key`
   (`type: "secret"`, ADR-0082) and their defaults never change
   (`scripts/validate.sh` enforces it). Read them with `plugin.SettingsGet`
-  per event, never cached.
+  per event, never cached. The background-removal keys `image_provider`,
+  `image_endpoint`, `image_model` (ut-docs#3126) are read by the **till**,
+  not this plugin: they stay plain text — a `type: "endpoint"`
+  `image_endpoint` would give this module `http:lan` egress to the rembg
+  host it never calls (`validate.sh` enforces both).
 - **Self-hosted stays the DEFAULT** (ADR-0126, superseding ADR-0085): a
   shop may pick ANY provider with its OWN key; today `provider = claude`
   or `provider = openai`. Only those exact values select a hosted vendor —
