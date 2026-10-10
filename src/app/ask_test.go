@@ -4,6 +4,7 @@ package app
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
@@ -160,6 +161,9 @@ func TestAskJob_RunsToolLoopThroughViews(t *testing.T) {
 	h.InJob = true
 	var viewCalls []string
 	h.Views = func(name string, args json.RawMessage) (json.RawMessage, error) {
+		if name == "shop.context.v1" {
+			return json.RawMessage(`[{"store_name":"","till_name":"Till 1","currency_code":"GBP","currency_decimals":2,"locale":"en"}]`), nil
+		}
 		viewCalls = append(viewCalls, name+string(args))
 		return json.RawMessage(`[{"day":"2026-10-09","count":3,"total":12345,"tax_total":2057}]`), nil
 	}
@@ -360,6 +364,7 @@ func TestManifestDeclaresEveryViewAndHook(t *testing.T) {
 	views := map[string]string{
 		"sales.by_day.v1": "view:sales", "items.top.v1": "view:sales", "payments.breakdown.v1": "view:sales",
 		"stock.levels.v1": "view:inventory", "audit.summary.v1": "view:audit", "catalog.items.v1": "view:inventory",
+		"shop.context.v1": "view:sales",
 	}
 	used := map[string]bool{}
 	for _, v := range m.ViewsUsed {
@@ -400,5 +405,100 @@ func TestManifestDeclaresEveryViewAndHook(t *testing.T) {
 	}
 	if _, ok := enKeys(t)[entry.Label]; !ok {
 		t.Fatalf("entry label %q not in the bundle", entry.Label)
+	}
+}
+
+// askPrompt runs one Ask job on a till whose shop.context.v1 is the given
+// stub and returns the system prompt the model was sent, the answer
+// document's literals and the shop.context.v1 argument bytes it was called
+// with ("" when never called).
+func askPrompt(t *testing.T, shopView func(args json.RawMessage) (json.RawMessage, error)) (sys, answer, shopArgs string) {
+	t.Helper()
+	h := newHost(t, ollamaSettings())
+	h.InJob = true
+	h.Views = func(name string, args json.RawMessage) (json.RawMessage, error) {
+		if name != "shop.context.v1" {
+			t.Errorf("unexpected view %s", name)
+			return json.RawMessage(`[]`), nil
+		}
+		shopArgs = string(args)
+		return shopView(args)
+	}
+	h.HTTP = func(req plugin.HTTPRequest) (plugin.HTTPResponse, error) {
+		var body struct {
+			Messages []map[string]any `json:"messages"`
+		}
+		_ = json.Unmarshal(req.Body, &body)
+		sys, _ = body.Messages[0]["content"].(string)
+		return plugin.HTTPResponse{Status: 200, Body: []byte(`{"message":{"role":"assistant","content":"Fine."}}`)}, nil
+	}
+	out, err := dispatch(t, AskJobEvent, jobPayload("How did we do?"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return sys, literals(components(t, out)), shopArgs
+}
+
+func shopRow(row string) func(json.RawMessage) (json.RawMessage, error) {
+	return func(json.RawMessage) (json.RawMessage, error) { return json.RawMessage(row), nil }
+}
+
+// The prompt names the shop and currency from shop.context.v1 (no
+// arguments: any argument is -4), so a zero-decimal shop is told so.
+func TestAskJob_PromptUsesShopContext(t *testing.T) {
+	sys, answer, args := askPrompt(t, shopRow(`[{"store_name":"Sample Shop JP","till_name":"Till 1","currency_code":"JPY","currency_decimals":0,"locale":"ja"}]`))
+	for _, want := range []string{`in the shop "Sample Shop JP"`, `minor units of JPY (0 decimal places)`} {
+		if !strings.Contains(sys, want) {
+			t.Errorf("system prompt lacks %q: %s", want, sys)
+		}
+	}
+	if args != "{}" {
+		t.Errorf("shop.context.v1 args = %q, want {}", args)
+	}
+	if !strings.Contains(answer, "Fine.") {
+		t.Errorf("answer = %q", answer)
+	}
+}
+
+// An older till has no such view: the fallback prompt is used and the
+// answer is never blocked.
+func TestAskJob_ShopContextUnavailableKeepsFallback(t *testing.T) {
+	for name, stub := range map[string]func(json.RawMessage) (json.RawMessage, error){
+		"view error": func(json.RawMessage) (json.RawMessage, error) { return nil, errors.New("unknown view") },
+		"bad json":   shopRow(`not json`),
+		"no rows":    shopRow(`[]`),
+		"two rows":   shopRow(`[{"store_name":"A","currency_code":"JPY","currency_decimals":0},{"store_name":"B"}]`),
+	} {
+		t.Run(name, func(t *testing.T) {
+			sys, answer, _ := askPrompt(t, stub)
+			for _, want := range []string{`in the shop "this shop"`, `the shop's currency (2 decimal places)`} {
+				if !strings.Contains(sys, want) {
+					t.Errorf("system prompt lacks %q: %s", want, sys)
+				}
+			}
+			if !strings.Contains(answer, "Fine.") {
+				t.Errorf("answer = %q", answer)
+			}
+		})
+	}
+}
+
+// An unset store name keeps "this shop"; the real currency is still used.
+func TestAskJob_EmptyStoreNameKeepsFallbackName(t *testing.T) {
+	sys, _, _ := askPrompt(t, shopRow(`[{"store_name":"  ","till_name":"Till 1","currency_code":" EUR ","currency_decimals":2,"locale":"de"}]`))
+	for _, want := range []string{`in the shop "this shop"`, `minor units of EUR (2 decimal places)`} {
+		if !strings.Contains(sys, want) {
+			t.Errorf("system prompt lacks %q: %s", want, sys)
+		}
+	}
+}
+
+// Decimals outside 0..4 are not trusted (defensive bound): back to 2.
+func TestAskJob_OutOfRangeDecimalsFallBack(t *testing.T) {
+	for _, d := range []string{"9", "-1", "5"} {
+		sys, _, _ := askPrompt(t, shopRow(`[{"store_name":"S","currency_code":"XYZ","currency_decimals":`+d+`,"locale":"en"}]`))
+		if !strings.Contains(sys, `minor units of XYZ (2 decimal places)`) {
+			t.Errorf("decimals %s: system prompt = %s", d, sys)
+		}
 	}
 }
