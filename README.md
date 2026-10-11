@@ -47,7 +47,7 @@ The till asks you to grant these at install:
 | `events:receive` | answer the camera button and the Ask panel |
 | `net:@setting:endpoint`, `http:lan` | reach your Ollama server at the `endpoint` address — on this till or on your shop network — and nothing else there |
 | `net:api.openai.com`, `net:api.anthropic.com` | used only when you set `provider` to `openai` or `claude` |
-| `view:inventory` | read item names, SKUs and reference photos for identify, and stock levels for Ask |
+| `view:inventory` | read item names, SKUs, which items have a photo and the reference photos themselves for identify, and stock levels for Ask |
 | `view:sales`, `view:audit` | read sales totals, best sellers, payment totals and till-activity counts for Ask (counts only — never customer data or audit details) |
 | `ui:slot:reports.panels`, `ui:page` | draw the Ask your till panel on Reports |
 
@@ -128,7 +128,8 @@ configured the till's built-in engine.
   It sends the photo to the plugin as a background job
   (`catalog.identify`); the plugin reads the active catalog
   (`catalog.items.v1`), with a hosted provider also up to 60 reference
-  photos, asks the model for at most three matches, and answers them as
+  photos — confirmed photos first, then thumbnails, newest first, from the
+  till's `catalog.photos.v1` list of photographed items — asks the model for at most three matches, and answers them as
   suggestions. Tapping one adds the item exactly as if it had been
   scanned, and the till keeps the photo as that item's newest reference
   photo for next time. The sale never waits on it: barcode scan and search
@@ -159,9 +160,11 @@ Known limits, compared with the till's built-in engine:
   `shop.context.v1` view. On an older till without that view it falls back
   to "this shop" and amounts in minor units with two decimal places, which
   is wrong for a zero-decimal currency such as JPY.
-- Reference photos come from the first 64 catalog items the till lets the
-  plugin open per identify (the built-in engine looked through the whole
-  catalog for 60 photos).
+- Reference photos: on a till with the `catalog.photos.v1` view
+  (ut-docs#4094) the plugin opens only items that have a photo, confirmed
+  photos first, newest first, so a photographed item is sent whatever its
+  name. On an older till it falls back to the first 64 catalog items by
+  name, the most it may open per identify.
 - The till's audit log no longer gets an `ai_identify` / `ai_ask` row per
   use; it still records `ai_identify_confirmed` when a cashier picks a
   suggestion.
