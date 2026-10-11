@@ -3,8 +3,9 @@
 WASM plugin (ADR-0009 one-repo-per-plugin, ADR-0001, ADR-0121) written in
 Go on the official guest SDK `github.com/universaltill/universal-till/sdk/plugin`
 — never hand-rolled `//go:wasmimport` lines. Since 2.0.0 (ut-docs#4032) it
-carries the AI engine itself: `src/ai` (Ollama / OpenAI / Claude providers,
-identify prompt, Ask tool loop — ported from the till's `internal/ai`),
+carries the AI engine itself: `src/ai` (Ollama / OpenAI /
+OpenAI-compatible / Claude providers, identify prompt, Ask tool loop —
+ported from the till's `internal/ai`),
 `src/app` (the `catalog.identify` job, the `reports.panels` Ask panel, its
 action and `<id>.ask` job, settings resolution), `src/main.go`
 (`plugin.Run`). Docs repo: `architecture/ai-plugin.md`. The till's own
@@ -24,10 +25,13 @@ comment wherever the plugin must differ.
   host it never calls (`validate.sh` enforces both).
 - **Self-hosted stays the DEFAULT** (ADR-0126, superseding ADR-0085): a
   shop may pick ANY provider with its OWN key; today `provider = claude`
-  or `provider = openai`. Only those exact values select a hosted vendor —
-  anything else is self-hosted (fail-safe), a hosted provider without a
-  key is "not configured", never Ollama. A hosted provider is never the
-  default, never on a Universal Till account. `provider` stays a
+  or `provider = openai`, or `openai_compatible` for the shop's own
+  OpenAI-compatible server at `endpoint`, key optional (ut-docs#2835).
+  Only those exact values leave Ollama; anything else is self-hosted
+  (fail-safe), a hosted provider without a key is "not configured", never
+  Ollama, and `openai_compatible` without an endpoint is "not
+  configured". A hosted provider is never the default, never on a
+  Universal Till account. `provider` stays a
   plain-text setting — no new manifest "select" field type. New vendors
   arrive as `src/ai` adapters reusing the same settings; a second key
   setting only with the per-capability adapter work ADR-0126 §6 requires.

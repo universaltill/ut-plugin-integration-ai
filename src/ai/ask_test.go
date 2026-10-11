@@ -156,9 +156,27 @@ func TestCanAsk(t *testing.T) {
 	if (&Service{}).CanAsk() {
 		t.Error("disabled service must not offer ask")
 	}
-	if New(Config{Provider: "claude", APIKey: "k", Model: "m"}).CanAsk() {
-		t.Error("claude provider has no ask loop yet — must report false")
+	for _, cfg := range []Config{
+		{Provider: "claude", APIKey: "k", Model: "m"},
+		{Provider: "openai", APIKey: "k"},
+		{Provider: "openai_compatible", Endpoint: "http://lm.local:1234"},
+		{Provider: "ollama", Endpoint: "http://x"},
+	} {
+		if !New(cfg).CanAsk() {
+			t.Errorf("%s implements the ask loop — CanAsk must be true", cfg.Provider)
+		}
 	}
+	if (&Service{p: identifyOnly{}, enabled: true}).CanAsk() {
+		t.Error("a provider without the tool loop must report false")
+	}
+}
+
+// identifyOnly is a provider without the ask loop (every shipped provider
+// has one since ut-docs#2835; the guard stays for future adapters).
+type identifyOnly struct{}
+
+func (identifyOnly) identify([]byte, string, []CatalogItem, []RefImage) (*IdentifyResult, error) {
+	return &IdentifyResult{}, nil
 }
 
 // Ask's guards: no question, a provider without the tool loop.
@@ -170,8 +188,8 @@ func TestAskGuards(t *testing.T) {
 		t.Fatal("empty question must error")
 	}
 
-	claude := New(Config{Provider: "claude", APIKey: "k", Model: "m"})
-	if _, err := claude.Ask("q", ShopContext{}, nil); err == nil {
+	noLoop := &Service{p: identifyOnly{}, enabled: true}
+	if _, err := noLoop.Ask("q", ShopContext{}, nil); err == nil {
 		t.Fatal("provider without a tool loop must error")
 	}
 }

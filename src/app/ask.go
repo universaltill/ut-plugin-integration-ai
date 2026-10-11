@@ -198,9 +198,9 @@ func handleView(e plugin.Event) (any, error) {
 		return nil, fmt.Errorf("unknown view %q", p.View)
 	}
 	if _, ok := canAsk(); !ok {
-		// Core hid the panel when AI is off or the provider has no ask loop
-		// (claude): a slot entry that gives no answer is skipped, so the
-		// panel is not drawn.
+		// Hidden when AI is off or the provider has no ask loop (every
+		// shipped provider has one since ut-docs#2835): a slot entry that
+		// gives no answer is skipped, so the panel is not drawn.
 		return nil, nil
 	}
 	return askPanel(""), nil

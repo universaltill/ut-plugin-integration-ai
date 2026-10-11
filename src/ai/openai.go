@@ -20,10 +20,11 @@ type openaiProvider struct {
 	visionModel string // camera identify
 	askModel    string // tool-capable model for "Ask your till"
 	baseURL     string
+	name        string // provider name in error messages
 }
 
 func newOpenAIProvider(apiKey, visionModel, askModel string) *openaiProvider {
-	return &openaiProvider{apiKey: apiKey, visionModel: visionModel, askModel: askModel, baseURL: openaiBaseURL}
+	return &openaiProvider{apiKey: apiKey, visionModel: visionModel, askModel: askModel, baseURL: openaiBaseURL, name: "openai"}
 }
 
 func (p *openaiProvider) usesRefs() {}
@@ -167,8 +168,11 @@ func runOpenAIToolCall(byName map[string]AskTool, tc openAIToolCall) string {
 // chatCompletion is one non-streaming POST /chat/completions exchange,
 // shared by identify and the ask loop.
 func (p *openaiProvider) chatCompletion(payload map[string]any) (openAIMessage, error) {
-	status, raw, err := postJSON(p.baseURL+"/chat/completions",
-		map[string]string{"Authorization": "Bearer " + p.apiKey}, payload)
+	var headers map[string]string
+	if p.apiKey != "" { // openai_compatible: the key is optional
+		headers = map[string]string{"Authorization": "Bearer " + p.apiKey}
+	}
+	status, raw, err := postJSON(p.baseURL+"/chat/completions", headers, payload)
 	if err != nil {
 		return openAIMessage{}, err
 	}
@@ -177,9 +181,9 @@ func (p *openaiProvider) chatCompletion(payload map[string]any) (openAIMessage, 
 		// own API key back (e.g. "Incorrect API key provided: sk-proj-***abcd")
 		// — this error reaches the till's log, so never the body here.
 		if status == 401 || status == 403 {
-			return openAIMessage{}, fmt.Errorf("openai %s: authentication failed (key rejected)", statusText(status))
+			return openAIMessage{}, fmt.Errorf("%s %s: authentication failed (key rejected)", p.name, statusText(status))
 		}
-		return openAIMessage{}, fmt.Errorf("openai %s: %s", statusText(status), strings.TrimSpace(string(raw)))
+		return openAIMessage{}, fmt.Errorf("%s %s: %s", p.name, statusText(status), strings.TrimSpace(string(raw)))
 	}
 	var envelope struct {
 		Choices []struct {
@@ -187,7 +191,7 @@ func (p *openaiProvider) chatCompletion(payload map[string]any) (openAIMessage, 
 		} `json:"choices"`
 	}
 	if err := json.Unmarshal(raw, &envelope); err != nil {
-		return openAIMessage{}, fmt.Errorf("parse openai response: %w", err)
+		return openAIMessage{}, fmt.Errorf("parse %s response: %w", p.name, err)
 	}
 	if len(envelope.Choices) == 0 {
 		return openAIMessage{}, fmt.Errorf("empty model response")

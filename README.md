@@ -24,11 +24,11 @@ API key — see [Hosted provider (opt-in)](#hosted-provider-opt-in) below.
 
 | key | default | meaning |
 |---|---|---|
-| `provider` | `self_hosted` | `self_hosted` (Ollama, the default), `claude` or `openai` (both hosted, need `api_key`). Any other value behaves as `self_hosted`. |
-| `endpoint` | `http://localhost:11434` | your Ollama server URL (self-hosted only). Must be an `http://` or `https://` address; the plugin can connect to this address and no other on your network. Plain `http://` works only for this machine or your local network — a public address needs `https://`. |
-| `vision_model` | `llama3.2-vision` | model for camera identify — with a hosted `provider` this names that provider's model instead (blank = `claude-haiku-4-5` for `claude`, `gpt-4o-mini` for `openai`) |
-| `ask_model` | `llama3.2` | tool-capable model for Ask your till — self-hosted and `openai`; `claude` has no ask loop yet so this setting has no effect there (blank = `gpt-4o-mini` for `openai`) |
-| `api_key` | *(empty)* | your own API key for the hosted provider. Stored masked and encrypted at rest; only used when `provider = claude` or `provider = openai`. |
+| `provider` | `self_hosted` | `self_hosted` (Ollama, the default), `openai_compatible` (your own OpenAI-compatible server — LM Studio, vLLM, llama.cpp — at `endpoint`), or `claude` / `openai` (both hosted, need `api_key`). Any other value behaves as `self_hosted`. |
+| `endpoint` | `http://localhost:11434` | your Ollama server URL (self-hosted), or your OpenAI-compatible server's base URL (`openai_compatible`; an address with no path gets `/v1` added, e.g. `http://192.168.1.50:1234` → `…:1234/v1`). Must be an `http://` or `https://` address; the plugin can connect to this address and no other on your network. Plain `http://` works only for this machine or your local network — a public address needs `https://`. |
+| `vision_model` | `llama3.2-vision` | model for camera identify — with another `provider` this names that provider's model instead (blank = `claude-haiku-4-5` for `claude`, `gpt-4o-mini` for `openai`, `llama3.2-vision` for `openai_compatible`). For `claude` it is also the model Ask your till uses. |
+| `ask_model` | `llama3.2` | tool-capable model for Ask your till — self-hosted, `openai_compatible` and `openai` (blank = `gpt-4o-mini` for `openai`). Not used with `claude`, which asks with `vision_model`. |
+| `api_key` | *(empty)* | your own API key. Stored masked and encrypted at rest. Required for `provider = claude` or `openai`; optional for `openai_compatible` (sent only to your `endpoint`, and only if your server wants one); never used when self-hosted. |
 | `image_provider` | `self_hosted` | provider for background removal. Only `self_hosted` (your own rembg service) exists today; **any other value switches background removal off** — never a hosted call. |
 | `image_endpoint` | *(empty)* | your rembg server's base URL, e.g. `http://192.168.1.20:7000`. Empty = background removal off. Must be a plain `http`/`https` URL; the till checks it each time it calls the service and treats anything else as off. |
 | `image_model` | `birefnet-general-lite` | the rembg model. Only `birefnet-general-lite` or `u2netp` are accepted; any other value switches background removal off and the settings page says so. |
@@ -45,7 +45,7 @@ The till asks you to grant these at install:
 | permission | why |
 |---|---|
 | `events:receive` | answer the camera button and the Ask panel |
-| `net:@setting:endpoint`, `http:lan` | reach your Ollama server at the `endpoint` address — on this till or on your shop network — and nothing else there |
+| `net:@setting:endpoint`, `http:lan` | reach your Ollama or OpenAI-compatible server at the `endpoint` address — on this till or on your shop network — and nothing else there |
 | `net:api.openai.com`, `net:api.anthropic.com` | used only when you set `provider` to `openai` or `claude` |
 | `view:inventory` | read item names, SKUs, which items have a photo and the reference photos themselves for identify, and stock levels for Ask |
 | `view:sales`, `view:audit` | read sales totals, best sellers, payment totals and till-activity counts for Ask (counts only — never customer data or audit details) |
@@ -96,11 +96,8 @@ that vendor in `api_key`. This is a shop-chosen, shop-paid alternative:
 - **What leaves the shop.** With a hosted provider, what the AI features
   work on is sent to that provider's servers (Anthropic or OpenAI, both
   United States): for camera identify, the product photo plus your
-  catalog's item names, SKUs and reference photos. With `provider =
-  claude`, that's the only thing sent — Ask your till has no Claude
-  implementation yet (see below). With `provider = openai`, Ask your till
-  is also sent to OpenAI: your questions together with the sales and stock
-  figures used to answer them. The settings page shows this notice above
+  catalog's item names, SKUs and reference photos; for Ask your till, your
+  questions together with the sales and stock figures used to answer them. The settings page shows this notice above
   the key field. Self-hosted keeps all of it on your own hardware.
 - **Your account, your cost.** The key is your own account with that
   provider; you pay them directly. Universal Till holds no account with
@@ -109,12 +106,22 @@ that vendor in `api_key`. This is a shop-chosen, shop-paid alternative:
   hosted provider. A typo, a different spelling or any other value falls
   back to self-hosted — never forward to a paid API. `claude`/`openai`
   with no key leaves AI unconfigured (not silently Ollama).
-- **Today's coverage.** `provider = openai` runs both camera identify and
-  Ask your till. `provider = claude` runs camera identify only — Ask your
-  till has no Claude implementation yet, so its panel hides itself while
-  `provider = claude`.
+- **Today's coverage.** `provider = claude` and `provider = openai` both
+  run camera identify and Ask your till.
 - **Switching back.** Set `provider` to `self_hosted` (or clear it); the
   Ollama settings above apply again immediately.
+
+## Your own OpenAI-compatible server
+
+`provider = openai_compatible` points both features at any server that
+speaks the OpenAI Chat Completions API — LM Studio, vLLM, llama.cpp's
+server (or Ollama's own `/v1`) — at the `endpoint` address, with
+`vision_model` / `ask_model` naming its models. `api_key` is optional and
+goes only to that server. What is sent is the same as for a hosted
+provider (the photo and catalog for identify, questions and figures for
+Ask) but it goes to **whatever server `endpoint` names**: your own machine
+keeps it in the shop; a public address sends it there. No reference photos
+are sent, as with Ollama. Without an `endpoint` AI stays unconfigured.
 
 ## How it works
 
@@ -152,7 +159,7 @@ Known limits, compared with the till's built-in engine:
   vision model on a small machine therefore shows "Identification
   failed" where the built-in engine waited up to 90 s. Until that's fixed,
   use a smaller/faster model, or the till's `UT_AI_*` settings.
-- When Ask isn't available (provider `claude`, or AI not set up), the
+- When Ask isn't available (AI not set up), the
   panel is hidden by not answering; the till logs one warning line per
   Reports visit for that.
 
@@ -179,8 +186,8 @@ scripts/guard-plugin-i18n.sh  # locale bundle drift
 scripts/package.sh            # dist/<id>_<version>_universal.tar.gz
 ```
 
-`src/ai` is the engine (Ollama, OpenAI and Claude providers, ported from
-the till's `internal/ai`); `src/app` wires it to the till's events, views
+`src/ai` is the engine (Ollama, OpenAI, OpenAI-compatible and Claude
+providers, ported from the till's `internal/ai`); `src/app` wires it to the till's events, views
 and settings; `src/main.go` is `plugin.Run`. User-facing text lives in
 `locales/*.json` (`en` is the base). Release = tag `v<version>` matching
 `manifest.json`, cut automatically on merge when the version moved.

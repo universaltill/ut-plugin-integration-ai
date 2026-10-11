@@ -36,7 +36,7 @@ func TestNewDisabledWithoutBackend(t *testing.T) {
 	}
 }
 
-// Unlike claude, openai implements the ask loop — New() must wire it up so
+// openai implements the ask loop — New() must wire it up so
 // CanAsk reports true, and default the vision/ask models to
 // DefaultOpenAIModel when the caller leaves them empty.
 func TestNewOpenAIWithKeyEnabledAndCanAsk(t *testing.T) {
