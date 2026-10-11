@@ -17,5 +17,10 @@
   "integration_ai.identify.bad_photo": "عکس باید JPEG یا PNG و حداکثر ۴ مگابایت باشد.",
   "integration_ai.identify.confidence.high": "تطابق نزدیک",
   "integration_ai.identify.confidence.medium": "تطابق احتمالی",
-  "integration_ai.identify.confidence.low": "تطابق بعید"
+  "integration_ai.identify.confidence.low": "تطابق بعید",
+  "integration_ai.error.key_rejected": "ارائه‌دهندهٔ هوش مصنوعی شما کلید API را نپذیرفت. کلید را در تنظیمات افزونهٔ دستیار هوش مصنوعی بررسی کنید.",
+  "integration_ai.error.no_credit": "حساب شما نزد ارائه‌دهندهٔ هوش مصنوعی اعتباری ندارد. در حساب خود نزد ارائه‌دهنده اعتبار یا یک طرح پرداخت اضافه کنید و دوباره تلاش کنید.",
+  "integration_ai.error.rate_limited": "ارائه‌دهندهٔ هوش مصنوعی شما الان شلوغ است یا درخواست‌ها را محدود می‌کند. یک دقیقه دیگر دوباره تلاش کنید.",
+  "integration_ai.error.unreachable": "صندوق به ارائه‌دهندهٔ هوش مصنوعی شما دسترسی ندارد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.",
+  "integration_ai.error.provider_failed": "ارائه‌دهندهٔ هوش مصنوعی شما الان نتوانست پاسخ دهد. بعداً دوباره تلاش کنید؛ اگر ادامه داشت، نام مدل‌ها را در تنظیمات افزونهٔ دستیار هوش مصنوعی و حساب خود را نزد ارائه‌دهنده بررسی کنید."
 }

@@ -27,7 +27,7 @@ func postJSON(rawURL string, headers map[string]string, payload any) (int, []byt
 	}
 	resp, err := plugin.HTTP(plugin.HTTPRequest{Method: "POST", URL: rawURL, Headers: h, Body: body})
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, unreachable(err)
 	}
 	return resp.Status, resp.Body, nil
 }

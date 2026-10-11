@@ -100,7 +100,12 @@ type refUser interface{ usesRefs() }
 type Service struct {
 	p       provider
 	enabled bool
+	hosted  bool // claude/openai: a vendor's servers, not the shop's own
 }
+
+// Hosted reports whether the provider is a vendor's hosted API (claude,
+// openai) rather than a server the shop runs (ollama, openai_compatible).
+func (s *Service) Hosted() bool { return s != nil && s.hosted }
 
 // New builds the Service for cfg; a provider without its endpoint or key is
 // disabled, never silently another provider.
@@ -115,7 +120,7 @@ func New(cfg Config) *Service {
 		if cfg.APIKey == "" {
 			return &Service{}
 		}
-		return &Service{p: newClaudeProvider(cfg.APIKey, cfg.Model), enabled: true}
+		return &Service{p: newClaudeProvider(cfg.APIKey, cfg.Model), enabled: true, hosted: true}
 	case "openai":
 		if cfg.APIKey == "" {
 			return &Service{}
@@ -128,7 +133,7 @@ func New(cfg Config) *Service {
 		if askModel == "" {
 			askModel = DefaultOpenAIModel
 		}
-		return &Service{p: newOpenAIProvider(cfg.APIKey, visionModel, askModel), enabled: true}
+		return &Service{p: newOpenAIProvider(cfg.APIKey, visionModel, askModel), enabled: true, hosted: true}
 	case "openai_compatible":
 		if cfg.Endpoint == "" {
 			return &Service{}

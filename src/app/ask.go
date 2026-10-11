@@ -243,8 +243,12 @@ func handleAskJob(e plugin.Event) (any, error) {
 	progress(10, "integration_ai.ask.thinking")
 	answer, err := svc.Ask(q, shopContext(), askTools())
 	if err != nil {
-		plugin.Logf("ai ask failed: %v", err)
-		return askPanel(q, notice("error", "integration_ai.ask.error")), nil
+		plugin.Logf("ai ask failed (%s): %v", ai.Kind(err), err)
+		k := failureKey(svc, err)
+		if k == "" {
+			k = "integration_ai.ask.error"
+		}
+		return askPanel(q, notice("error", k)), nil
 	}
 	rest := []component{component{"type": "heading", "text": key("integration_ai.ask.answer")}}
 	for _, c := range chunks(truncate(strings.TrimSpace(answer), maxAnswerBytes), maxLiteralBytes) {

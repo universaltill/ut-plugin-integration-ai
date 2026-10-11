@@ -17,5 +17,10 @@
   "integration_ai.identify.bad_photo": "The photo must be a JPEG or PNG of at most 4 MB.",
   "integration_ai.identify.confidence.high": "Close match",
   "integration_ai.identify.confidence.medium": "Possible match",
-  "integration_ai.identify.confidence.low": "Unlikely match"
+  "integration_ai.identify.confidence.low": "Unlikely match",
+  "integration_ai.error.key_rejected": "Your AI provider rejected the API key. Check the key in the AI Assistant plugin's settings.",
+  "integration_ai.error.no_credit": "Your AI provider account has no credit left. Add credit or a payment plan in your account with the provider, then try again.",
+  "integration_ai.error.rate_limited": "Your AI provider is busy or limiting requests right now. Try again in a minute.",
+  "integration_ai.error.unreachable": "The till can't reach your AI provider. Check the internet connection and try again.",
+  "integration_ai.error.provider_failed": "Your AI provider couldn't answer right now. Try again later; if it keeps happening, check the model names in the AI Assistant plugin's settings and your account with the provider."
 }

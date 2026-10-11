@@ -179,11 +179,8 @@ func (p *openaiProvider) chatCompletion(payload map[string]any) (openAIMessage, 
 	if status != 200 {
 		// 401/403 bodies from OpenAI echo a masked fragment of the caller's
 		// own API key back (e.g. "Incorrect API key provided: sk-proj-***abcd")
-		// — this error reaches the till's log, so never the body here.
-		if status == 401 || status == 403 {
-			return openAIMessage{}, fmt.Errorf("%s %s: authentication failed (key rejected)", p.name, statusText(status))
-		}
-		return openAIMessage{}, fmt.Errorf("%s %s: %s", p.name, statusText(status), strings.TrimSpace(string(raw)))
+		// — statusError never puts that body in the error.
+		return openAIMessage{}, statusError(p.name, status, raw)
 	}
 	var envelope struct {
 		Choices []struct {
