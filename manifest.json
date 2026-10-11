@@ -1,7 +1,7 @@
 {
   "id": "com.universaltill.integration-ai",
   "name": "AI Assistant",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "description": "The till's AI features — Identify by camera on the sell screen and Ask your till on Reports — running inside this plugin, plus the settings for background removal of item and category photos, which the till runs against YOUR OWN rembg service (image_endpoint) with an allowed open model (birefnet-general-lite or u2netp). Self-hosted by default: point the endpoint setting at YOUR OWN Ollama server on this machine, a store mini-PC or your homelab, and nothing leaves your infrastructure. A shop that prefers a hosted provider can opt in by setting provider to claude or openai and entering its own API key — the shop's own account and cost, never a Universal Till account. Or set provider to openai_compatible to use your own OpenAI-compatible server (LM Studio, vLLM, llama.cpp) at the endpoint setting, key optional. Uninstall and AI disappears.",
   "author": "Universal Till",
   "website": "https://universaltill.com",
@@ -9,7 +9,7 @@
   "runtime": "wasm",
   "entrypoint": "./bin/plugin.wasm",
   "device_arch": "any",
-  "min_pos_version": "1.0.0",
+  "min_pos_version": "0.31.9",
   "permissions": [
     "events:receive",
     "view:sales",
@@ -38,6 +38,7 @@
   },
   "locales": [
     "en-US",
+    "de-DE",
     "ar-SA",
     "fa-IR",
     "tr-TR"
@@ -57,44 +58,91 @@
     {
       "key": "provider",
       "default_value": "self_hosted",
-      "scope": "global"
+      "scope": "global",
+      "label": "integration_ai.settings.provider",
+      "type": "choice",
+      "help": "integration_ai.settings.provider.help",
+      "options": [
+        {
+          "value": "self_hosted",
+          "label": "integration_ai.settings.provider.self_hosted"
+        },
+        {
+          "value": "openai",
+          "label": "integration_ai.settings.provider.openai"
+        },
+        {
+          "value": "claude",
+          "label": "integration_ai.settings.provider.claude"
+        },
+        {
+          "value": "openai_compatible",
+          "label": "integration_ai.settings.provider.openai_compatible"
+        }
+      ]
     },
     {
       "key": "endpoint",
       "default_value": "http://localhost:11434",
       "scope": "global",
-      "type": "endpoint"
+      "type": "endpoint",
+      "label": "integration_ai.settings.endpoint",
+      "help": "integration_ai.settings.endpoint.help",
+      "show_when": {
+        "key": "provider",
+        "in": [
+          "self_hosted",
+          "openai_compatible"
+        ]
+      }
     },
     {
       "key": "vision_model",
       "default_value": "llama3.2-vision",
-      "scope": "global"
+      "scope": "global",
+      "label": "integration_ai.settings.vision_model",
+      "help": "integration_ai.settings.model.help"
     },
     {
       "key": "ask_model",
       "default_value": "llama3.2",
-      "scope": "global"
+      "scope": "global",
+      "label": "integration_ai.settings.ask_model",
+      "help": "integration_ai.settings.model.help"
     },
     {
       "key": "api_key",
       "default_value": "",
       "scope": "global",
-      "type": "secret"
+      "type": "secret",
+      "label": "integration_ai.settings.api_key",
+      "help": "integration_ai.settings.api_key.help",
+      "show_when": {
+        "key": "provider",
+        "in": [
+          "openai",
+          "claude",
+          "openai_compatible"
+        ]
+      }
     },
     {
       "key": "image_provider",
       "default_value": "self_hosted",
-      "scope": "global"
+      "scope": "global",
+      "label": "integration_ai.settings.image_provider"
     },
     {
       "key": "image_endpoint",
       "default_value": "",
-      "scope": "global"
+      "scope": "global",
+      "label": "integration_ai.settings.image_endpoint"
     },
     {
       "key": "image_model",
       "default_value": "birefnet-general-lite",
-      "scope": "global"
+      "scope": "global",
+      "label": "integration_ai.settings.image_model"
     }
   ],
   "hooks": [

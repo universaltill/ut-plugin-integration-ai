@@ -22,5 +22,21 @@
   "integration_ai.error.no_credit": "YZ sağlayıcınızdaki hesabınızda kredi kalmadı. Sağlayıcıdaki hesabınıza kredi veya bir ödeme planı ekleyip tekrar deneyin.",
   "integration_ai.error.rate_limited": "YZ sağlayıcınız şu anda yoğun veya istekleri sınırlıyor. Bir dakika sonra tekrar deneyin.",
   "integration_ai.error.unreachable": "Kasa YZ sağlayıcınıza ulaşamıyor. İnternet bağlantısını kontrol edip tekrar deneyin.",
-  "integration_ai.error.provider_failed": "YZ sağlayıcınız şu anda yanıt veremedi. Daha sonra tekrar deneyin; sorun sürerse YZ Asistanı eklentisinin ayarlarındaki model adlarını ve sağlayıcıdaki hesabınızı kontrol edin."
+  "integration_ai.error.provider_failed": "YZ sağlayıcınız şu anda yanıt veremedi. Daha sonra tekrar deneyin; sorun sürerse YZ Asistanı eklentisinin ayarlarındaki model adlarını ve sağlayıcıdaki hesabınızı kontrol edin.",
+  "integration_ai.settings.provider": "Yapay zekâ sağlayıcısı",
+  "integration_ai.settings.provider.help": "Yapay zekânın nerede çalıştığı. Kendi ağımda seçeneği her şeyi kendi donanımınızda tutar; ChatGPT ve Claude o şirketteki kendi hesabınızı, kendi masrafınıza kullanır.",
+  "integration_ai.settings.provider.self_hosted": "Kendi ağımda (Ollama)",
+  "integration_ai.settings.provider.openai": "ChatGPT (OpenAI)",
+  "integration_ai.settings.provider.claude": "Claude (Anthropic)",
+  "integration_ai.settings.provider.openai_compatible": "Kendi OpenAI uyumlu sunucum (LM Studio, vLLM, llama.cpp)",
+  "integration_ai.settings.endpoint": "Yapay zekâ sunucusu adresi",
+  "integration_ai.settings.endpoint.help": "Kendi yapay zekâ sunucunuzun web adresi, örneğin http://192.168.1.20:11434.",
+  "integration_ai.settings.vision_model": "Kamerayla tanı için model",
+  "integration_ai.settings.ask_model": "Kasanıza sorun için model",
+  "integration_ai.settings.model.help": "Model adını sağlayıcınızın listelediği şekliyle aynen yazın.",
+  "integration_ai.settings.api_key": "API anahtarı",
+  "integration_ai.settings.api_key.help": "Sağlayıcıdaki hesabınızda bir anahtar oluşturun ve buraya yapıştırın. Şifreli saklanır ve bir daha gösterilmez.",
+  "integration_ai.settings.image_provider": "Arka plan kaldırma: hizmet",
+  "integration_ai.settings.image_endpoint": "Arka plan kaldırma: hizmet adresi",
+  "integration_ai.settings.image_model": "Arka plan kaldırma: model"
 }

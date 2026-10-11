@@ -22,5 +22,21 @@
   "integration_ai.error.no_credit": "لا يوجد رصيد متبقٍّ في حسابك لدى مزوّد الذكاء الاصطناعي. أضف رصيداً أو خطة دفع في حسابك لدى المزوّد ثم حاول مجدداً.",
   "integration_ai.error.rate_limited": "مزوّد الذكاء الاصطناعي مشغول الآن أو يحدّ من الطلبات. حاول مجدداً بعد دقيقة.",
   "integration_ai.error.unreachable": "يتعذّر على الصندوق الوصول إلى مزوّد الذكاء الاصطناعي. تحقّق من اتصال الإنترنت وحاول مجدداً.",
-  "integration_ai.error.provider_failed": "تعذّر على مزوّد الذكاء الاصطناعي الإجابة الآن. حاول مجدداً لاحقاً؛ وإذا تكرّر ذلك فتحقّق من أسماء النماذج في إعدادات إضافة مساعد الذكاء الاصطناعي ومن حسابك لدى المزوّد."
+  "integration_ai.error.provider_failed": "تعذّر على مزوّد الذكاء الاصطناعي الإجابة الآن. حاول مجدداً لاحقاً؛ وإذا تكرّر ذلك فتحقّق من أسماء النماذج في إعدادات إضافة مساعد الذكاء الاصطناعي ومن حسابك لدى المزوّد.",
+  "integration_ai.settings.provider": "مزوّد الذكاء الاصطناعي",
+  "integration_ai.settings.provider.help": "مكان تشغيل الذكاء الاصطناعي. خيار «على شبكتي الخاصة» يُبقي كل شيء على أجهزتك؛ أما ChatGPT وClaude فيستخدمان حسابك الخاص لدى تلك الشركة وعلى نفقتك.",
+  "integration_ai.settings.provider.self_hosted": "على شبكتي الخاصة (Ollama)",
+  "integration_ai.settings.provider.openai": "ChatGPT (OpenAI)",
+  "integration_ai.settings.provider.claude": "Claude (Anthropic)",
+  "integration_ai.settings.provider.openai_compatible": "خادمي الخاص المتوافق مع OpenAI (LM Studio، vLLM، llama.cpp)",
+  "integration_ai.settings.endpoint": "عنوان خادم الذكاء الاصطناعي",
+  "integration_ai.settings.endpoint.help": "عنوان الويب لخادم الذكاء الاصطناعي الخاص بك، مثل http://192.168.1.20:11434.",
+  "integration_ai.settings.vision_model": "النموذج المستخدم للتعرّف بالكاميرا",
+  "integration_ai.settings.ask_model": "النموذج المستخدم لـ «اسأل جهاز الكاشير»",
+  "integration_ai.settings.model.help": "اكتب اسم النموذج تمامًا كما يورده المزوّد.",
+  "integration_ai.settings.api_key": "مفتاح API",
+  "integration_ai.settings.api_key.help": "أنشئ مفتاحًا في حسابك لدى المزوّد والصقه هنا. يُخزَّن مشفّرًا ولا يُعرض مرة أخرى.",
+  "integration_ai.settings.image_provider": "إزالة الخلفية: الخدمة",
+  "integration_ai.settings.image_endpoint": "إزالة الخلفية: عنوان الخدمة",
+  "integration_ai.settings.image_model": "إزالة الخلفية: النموذج"
 }
