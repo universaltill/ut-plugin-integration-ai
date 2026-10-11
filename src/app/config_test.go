@@ -116,3 +116,39 @@ func TestResolve_SettingsReadFailureIsUnset(t *testing.T) {
 		t.Fatalf("unreadable settings resolved to %+v", cfg)
 	}
 }
+
+// ut-docs#2835: provider = openai_compatible is the shop's own
+// OpenAI-compatible server at the endpoint setting; the key is optional
+// and the models default like self-hosted.
+func TestResolve_OpenAICompatible(t *testing.T) {
+	newHost(t, map[string]string{"provider": "openai_compatible", "endpoint": " http://lm.local:1234 "})
+	cfg, ok := ResolveConfig()
+	want := ai.Config{Provider: "openai_compatible", Endpoint: "http://lm.local:1234", Model: ai.DefaultOllamaVisionModel, AskModel: ai.DefaultOllamaAskModel}
+	if !ok || cfg != want {
+		t.Fatalf("got %+v ok=%v, want %+v", cfg, ok, want)
+	}
+	newHost(t, map[string]string{"provider": "openai_compatible", "endpoint": "https://llm.example.com/v1", "api_key": "sk-own", "vision_model": "qwen2.5-vl", "ask_model": "qwen3"})
+	cfg, ok = ResolveConfig()
+	want = ai.Config{Provider: "openai_compatible", Endpoint: "https://llm.example.com/v1", APIKey: "sk-own", Model: "qwen2.5-vl", AskModel: "qwen3"}
+	if !ok || cfg != want {
+		t.Fatalf("got %+v ok=%v, want %+v", cfg, ok, want)
+	}
+}
+
+func TestResolve_OpenAICompatibleWithoutEndpointIsNotConfigured(t *testing.T) {
+	newHost(t, map[string]string{"provider": "openai_compatible", "endpoint": "", "api_key": "sk-x"})
+	if cfg, ok := ResolveConfig(); ok {
+		t.Fatalf("openai_compatible without an endpoint resolved to %+v", cfg)
+	}
+}
+
+// Only the exact value selects it; near misses stay self-hosted.
+func TestResolve_OpenAICompatibleNearMissesStaySelfHosted(t *testing.T) {
+	for _, provider := range []string{"openai-compatible", "OpenAI_Compatible", "openai_compat", "compatible"} {
+		newHost(t, map[string]string{"provider": provider, "api_key": "k", "endpoint": "http://ollama.local:11434"})
+		cfg, ok := ResolveConfig()
+		if !ok || cfg.Provider != "ollama" || cfg.APIKey != "" {
+			t.Fatalf("provider %q resolved to %+v ok=%v, want self-hosted", provider, cfg, ok)
+		}
+	}
+}

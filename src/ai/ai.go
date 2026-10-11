@@ -5,7 +5,8 @@
 // The default backend is SELF-HOSTED (an Ollama server running an open
 // vision model on the shop's own hardware/homelab). A shop may pick any
 // other provider with its own key (ADR-0126, superseding ADR-0085); today
-// the Claude and OpenAI APIs are implemented, and more arrive as adapters.
+// the Claude and OpenAI APIs and any OpenAI-compatible server (LM Studio,
+// vLLM, llama.cpp) are implemented, and more arrive as adapters.
 // Never a Universal Till AI account.
 //
 // Every request goes out through the till's http_request host function
@@ -29,11 +30,11 @@ import (
 // resolution builds it). With neither an endpoint nor a key the feature set
 // is unavailable.
 type Config struct {
-	Provider string // "ollama" (self-hosted, default), "claude", or "openai" (both optional)
-	Endpoint string // Ollama base URL, e.g. http://localhost:11434
+	Provider string // "ollama" (self-hosted, default), "openai_compatible" (the shop's own server), "claude" or "openai" (hosted, optional)
+	Endpoint string // ollama / openai_compatible base URL, e.g. http://localhost:11434
 	Model    string
-	AskModel string // tool-capable model for "Ask your till" (ollama, openai)
-	APIKey   string // claude/openai provider only
+	AskModel string // tool-capable model for "Ask your till" (ollama, openai, openai_compatible)
+	APIKey   string // claude/openai (required), openai_compatible (optional)
 }
 
 // DefaultClaudeModel is the model the claude provider runs when none is
@@ -128,6 +129,11 @@ func New(cfg Config) *Service {
 			askModel = DefaultOpenAIModel
 		}
 		return &Service{p: newOpenAIProvider(cfg.APIKey, visionModel, askModel), enabled: true}
+	case "openai_compatible":
+		if cfg.Endpoint == "" {
+			return &Service{}
+		}
+		return &Service{p: newCompatProvider(cfg.Endpoint, cfg.APIKey, cfg.Model, cfg.AskModel), enabled: true}
 	default:
 		return &Service{}
 	}

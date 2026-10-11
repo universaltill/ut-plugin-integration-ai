@@ -66,18 +66,39 @@ func TestAskView_DrawsTheForm(t *testing.T) {
 	}
 }
 
-// Core hid the panel when the provider has no ask loop (claude) or AI is
-// not configured; in a slot "no answer" is skipped, so the panel hides.
-func TestAskView_HiddenWithoutAskLoop(t *testing.T) {
+// The panel hides when AI is not configured; in a slot "no answer" is
+// skipped, so the panel is not drawn.
+func TestAskView_HiddenWhenNotConfigured(t *testing.T) {
 	for name, settings := range map[string]map[string]string{
-		"claude":         {"provider": "claude", "api_key": "k"},
-		"not configured": {"provider": "self_hosted"},
+		"not configured":         {"provider": "self_hosted"},
+		"claude without key":     {"provider": "claude"},
+		"compatible no endpoint": {"provider": "openai_compatible", "endpoint": "", "api_key": "k"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			h := newHost(t, settings)
 			answer, err := dispatch(t, "ui.view.ask", viewPayload())
 			if err != nil || answer != nil {
 				t.Fatalf("answer=%v err=%v, want no answer", answer, err)
+			}
+			if h.Calls["http_request"] != 0 {
+				t.Fatal("no model call to draw a view")
+			}
+		})
+	}
+}
+
+// ut-docs#2835: every shipped provider runs the ask loop, so the panel
+// shows for claude and openai_compatible too, without calling the model.
+func TestAskView_ShownForEveryAskProvider(t *testing.T) {
+	for name, settings := range map[string]map[string]string{
+		"claude":            {"provider": "claude", "api_key": "k"},
+		"openai_compatible": {"provider": "openai_compatible", "endpoint": "http://lm.local:1234"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			h := newHost(t, settings)
+			answer, err := dispatch(t, "ui.view.ask", viewPayload())
+			if err != nil || answer == nil {
+				t.Fatalf("answer=%v err=%v, want the panel", answer, err)
 			}
 			if h.Calls["http_request"] != 0 {
 				t.Fatal("no model call to draw a view")
@@ -136,7 +157,7 @@ func TestAskAction_ValidatesQuestion(t *testing.T) {
 }
 
 func TestAskAction_UnavailableProviderAnswersNotice(t *testing.T) {
-	newHost(t, map[string]string{"provider": "claude", "api_key": "k"})
+	newHost(t, map[string]string{"provider": "claude"}) // hosted, no key: not configured
 	answer, err := dispatch(t, "ui.action.ask", actionPayload("ask", "q"))
 	if err != nil {
 		t.Fatal(err)

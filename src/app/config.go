@@ -30,7 +30,9 @@ func ResolveConfig() (ai.Config, bool) {
 	apiKey := setting("api_key")
 
 	// ADR-0085 Decision 2, fail-safe direction (ADR-0126): ONLY the exact
-	// values "claude" or "openai" select a hosted vendor. Unset,
+	// values "claude" or "openai" select a hosted vendor, and only the exact
+	// "openai_compatible" selects the shop's own OpenAI-compatible server
+	// (ut-docs#2835). Unset,
 	// "self_hosted", a typo, a different case, or any other value all take
 	// the self-hosted branch below, so a misconfiguration can only ever
 	// fall back to the shop's own hardware, never forward to a paid API
@@ -45,9 +47,9 @@ func ResolveConfig() (ai.Config, bool) {
 		if visionModel == "" {
 			visionModel = ai.DefaultClaudeModel
 		}
-		// vision_model doubles as the Claude model name. No AskModel: the
-		// claude provider has no ask loop yet, so Ask your till hides
-		// itself (Service.CanAsk).
+		// vision_model doubles as the Claude model name for identify AND
+		// ask (ut-docs#2835). Never ask_model: its stored default
+		// (llama3.2) must not reach Anthropic.
 		return ai.Config{Provider: "claude", APIKey: apiKey, Model: visionModel}, true
 	case "openai":
 		if apiKey == "" {
@@ -62,6 +64,12 @@ func ResolveConfig() (ai.Config, bool) {
 		return ai.Config{Provider: "openai", APIKey: apiKey, Model: visionModel, AskModel: askModel}, true
 	}
 	cfg := ai.Config{Provider: "ollama", Endpoint: endpoint, Model: visionModel, AskModel: askModel}
+	if provider == "openai_compatible" {
+		// The shop's own server at the endpoint setting; the key is
+		// optional, the models default like self-hosted. No endpoint →
+		// not configured (below).
+		cfg.Provider, cfg.APIKey = "openai_compatible", apiKey
+	}
 	if cfg.Model == "" {
 		cfg.Model = ai.DefaultOllamaVisionModel
 	}

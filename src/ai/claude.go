@@ -17,8 +17,9 @@ const (
 
 // claudeProvider is the OPTIONAL hosted backend (provider = claude,
 // ADR-0126) for shops that explicitly choose a paid API with their own key.
-// Identify only — there is no Claude ask loop yet, so Ask your till hides
-// itself on this provider (Service.CanAsk).
+// It implements identify and, since ut-docs#2835, the "Ask your till" tool
+// loop (claude_ask.go) on the same model (vision_model). Core's engine had
+// no Claude ask loop (#1792); this one is plugin-only.
 //
 // Core calls the Messages API through anthropic-sdk-go; the plugin speaks
 // the same JSON over the till's http_request (the SDK's own HTTP client
@@ -76,10 +77,7 @@ func (p *claudeProvider) identify(photo []byte, photoMediaType string, items []C
 		claudeImage(photoMediaType, photo),
 	)
 
-	status, raw, err := postJSON(claudeMessagesURL, map[string]string{
-		"x-api-key":         p.apiKey,
-		"anthropic-version": claudeAPIVersion,
-	}, map[string]any{
+	status, raw, err := p.post(map[string]any{
 		"model":      p.model,
 		"max_tokens": 1024,
 		"system":     system,
@@ -88,16 +86,8 @@ func (p *claudeProvider) identify(photo []byte, photoMediaType string, items []C
 		},
 		"messages": []map[string]any{{"role": "user", "content": content}},
 	})
-	if err != nil {
+	if err := claudeStatusErr(status, raw, err); err != nil {
 		return nil, err
-	}
-	if status != 200 {
-		// Same posture as openai: an authentication error never carries the
-		// body into the till's log.
-		if status == 401 || status == 403 {
-			return nil, fmt.Errorf("claude %s: authentication failed (key rejected)", statusText(status))
-		}
-		return nil, fmt.Errorf("claude %s: %s", statusText(status), strings.TrimSpace(string(raw)))
 	}
 	var resp struct {
 		StopReason string `json:"stop_reason"`
@@ -127,4 +117,28 @@ func (p *claudeProvider) identify(photo []byte, photoMediaType string, items []C
 		return nil, fmt.Errorf("parse model response: %w", err)
 	}
 	return &out, nil
+}
+
+// post is one Messages API call with the shop's key.
+func (p *claudeProvider) post(payload map[string]any) (int, []byte, error) {
+	return postJSON(claudeMessagesURL, map[string]string{
+		"x-api-key":         p.apiKey,
+		"anthropic-version": claudeAPIVersion,
+	}, payload)
+}
+
+// claudeStatusErr turns a transport error or a non-200 answer into an
+// error. Same posture as openai: an authentication error never carries the
+// body into the till's log (it can echo the key).
+func claudeStatusErr(status int, raw []byte, err error) error {
+	if err != nil {
+		return err
+	}
+	if status == 200 {
+		return nil
+	}
+	if status == 401 || status == 403 {
+		return fmt.Errorf("claude %s: authentication failed (key rejected)", statusText(status))
+	}
+	return fmt.Errorf("claude %s: %s", statusText(status), strings.TrimSpace(string(raw)))
 }
