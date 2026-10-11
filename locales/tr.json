@@ -17,5 +17,10 @@
   "integration_ai.identify.bad_photo": "Fotoğraf en fazla 4 MB boyutunda JPEG veya PNG olmalıdır.",
   "integration_ai.identify.confidence.high": "Yakın eşleşme",
   "integration_ai.identify.confidence.medium": "Olası eşleşme",
-  "integration_ai.identify.confidence.low": "Zayıf eşleşme"
+  "integration_ai.identify.confidence.low": "Zayıf eşleşme",
+  "integration_ai.error.key_rejected": "YZ sağlayıcınız API anahtarını reddetti. Anahtarı YZ Asistanı eklentisinin ayarlarında kontrol edin.",
+  "integration_ai.error.no_credit": "YZ sağlayıcınızdaki hesabınızda kredi kalmadı. Sağlayıcıdaki hesabınıza kredi veya bir ödeme planı ekleyip tekrar deneyin.",
+  "integration_ai.error.rate_limited": "YZ sağlayıcınız şu anda yoğun veya istekleri sınırlıyor. Bir dakika sonra tekrar deneyin.",
+  "integration_ai.error.unreachable": "Kasa YZ sağlayıcınıza ulaşamıyor. İnternet bağlantısını kontrol edip tekrar deneyin.",
+  "integration_ai.error.provider_failed": "YZ sağlayıcınız şu anda yanıt veremedi. Daha sonra tekrar deneyin; sorun sürerse YZ Asistanı eklentisinin ayarlarındaki model adlarını ve sağlayıcıdaki hesabınızı kontrol edin."
 }

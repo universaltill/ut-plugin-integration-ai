@@ -47,7 +47,7 @@ func (p *ollamaProvider) identify(photo []byte, _ string, items []CatalogItem, _
 		return nil, err
 	}
 	if status != 200 {
-		return nil, fmt.Errorf("ollama %s: %s", statusText(status), strings.TrimSpace(string(raw)))
+		return nil, statusError("ollama", status, raw)
 	}
 	var envelope struct {
 		Message struct {
@@ -171,7 +171,7 @@ func (p *ollamaProvider) chat(model string, messages []ollamaMessage, tools []ma
 		return ollamaMessage{}, err
 	}
 	if status != 200 {
-		return ollamaMessage{}, fmt.Errorf("ollama %s: %s", statusText(status), strings.TrimSpace(string(raw)))
+		return ollamaMessage{}, statusError("ollama", status, raw)
 	}
 	var envelope struct {
 		Message ollamaMessage `json:"message"`

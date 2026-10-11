@@ -93,8 +93,11 @@ func handleIdentify(e plugin.Event) (any, error) {
 	progress(45, "integration_ai.identify.searching")
 	res, err := svc.Identify(photo, mediaType, items, refs)
 	if err != nil {
-		plugin.Logf("ai identify failed: %v", err)
-		return nil, err
+		plugin.Logf("ai identify failed (%s): %v", ai.Kind(err), err)
+		if k := failureKey(svc, err); k != "" {
+			return document(notice("error", k)), nil
+		}
+		return nil, err // self-hosted: core's "Identification failed", as before
 	}
 	return identifyDocument(res, items), nil
 }

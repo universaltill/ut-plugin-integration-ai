@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"strings"
 )
 
 // claudeMessagesURL is the Anthropic Messages API (manifest:
@@ -137,8 +136,5 @@ func claudeStatusErr(status int, raw []byte, err error) error {
 	if status == 200 {
 		return nil
 	}
-	if status == 401 || status == 403 {
-		return fmt.Errorf("claude %s: authentication failed (key rejected)", statusText(status))
-	}
-	return fmt.Errorf("claude %s: %s", statusText(status), strings.TrimSpace(string(raw)))
+	return statusError("claude", status, raw)
 }

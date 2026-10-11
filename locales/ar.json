@@ -17,5 +17,10 @@
   "integration_ai.identify.bad_photo": "يجب أن تكون الصورة بصيغة JPEG أو PNG وبحجم لا يتجاوز 4 ميغابايت.",
   "integration_ai.identify.confidence.high": "تطابق قوي",
   "integration_ai.identify.confidence.medium": "تطابق محتمل",
-  "integration_ai.identify.confidence.low": "تطابق ضعيف"
+  "integration_ai.identify.confidence.low": "تطابق ضعيف",
+  "integration_ai.error.key_rejected": "رفض مزوّد الذكاء الاصطناعي مفتاح API. تحقّق من المفتاح في إعدادات إضافة مساعد الذكاء الاصطناعي.",
+  "integration_ai.error.no_credit": "لا يوجد رصيد متبقٍّ في حسابك لدى مزوّد الذكاء الاصطناعي. أضف رصيداً أو خطة دفع في حسابك لدى المزوّد ثم حاول مجدداً.",
+  "integration_ai.error.rate_limited": "مزوّد الذكاء الاصطناعي مشغول الآن أو يحدّ من الطلبات. حاول مجدداً بعد دقيقة.",
+  "integration_ai.error.unreachable": "يتعذّر على الصندوق الوصول إلى مزوّد الذكاء الاصطناعي. تحقّق من اتصال الإنترنت وحاول مجدداً.",
+  "integration_ai.error.provider_failed": "تعذّر على مزوّد الذكاء الاصطناعي الإجابة الآن. حاول مجدداً لاحقاً؛ وإذا تكرّر ذلك فتحقّق من أسماء النماذج في إعدادات إضافة مساعد الذكاء الاصطناعي ومن حسابك لدى المزوّد."
 }
