@@ -33,6 +33,16 @@ const (
 	// maxImageOpens is the host's item_image_open cap per event (failed
 	// opens count): past it every open is -5.
 	maxImageOpens = 64
+	// photosView lists the active items that have a reference photo,
+	// confirmed photos first, newest first (ut-docs#4094). A till without
+	// it answers -1; the plugin then walks the catalog in name order.
+	photosView = "catalog.photos.v1"
+	// photoViewLimit is the one page read from photosView: twice the
+	// reference cap, so a few rows outside the active catalog (past its
+	// 500-item cap) don't shrink the set much; the open cap bounds the walk.
+	// A catalog of over 500 items whose photos sit mostly past the first
+	// 500 names can still get fewer than 60 (not a regression).
+	photoViewLimit = 2 * maxReferenceImages
 	// maxSKUBytes is the add_to_basket SKU bound.
 	maxSKUBytes = 128
 )
@@ -167,15 +177,55 @@ func activeCatalog() ([]ai.CatalogItem, error) {
 	return items, nil
 }
 
+type photoViewRow struct {
+	ItemID string `json:"item_id"`
+}
+
+// photoOrder returns the active catalog items that have a reference photo,
+// in catalog.photos.v1's order (confirmed photos first, newest first), so
+// no open is spent on an item without one (ut-docs#4094). ok is false when
+// the view is unavailable — an older till (-1), no grant, an error — and
+// the caller falls back to the catalog's name order.
+func photoOrder(items []ai.CatalogItem) (_ []ai.CatalogItem, ok bool) {
+	raw, err := plugin.ViewQuery(photosView, map[string]int{"offset": 0, "limit": photoViewLimit})
+	if err != nil {
+		if !errors.Is(err, plugin.ErrNotFound) {
+			plugin.Logf("ai identify: %s unavailable, using catalog order: %v", photosView, err)
+		}
+		return nil, false
+	}
+	var rows []photoViewRow
+	if err := json.Unmarshal(raw, &rows); err != nil {
+		plugin.Logf("ai identify: %s: %v", photosView, err)
+		return nil, false
+	}
+	byID := make(map[string]ai.CatalogItem, len(items))
+	for _, it := range items {
+		byID[it.ID] = it
+	}
+	out := make([]ai.CatalogItem, 0, len(rows))
+	for _, r := range rows {
+		if it, found := byID[r.ItemID]; found {
+			out = append(out, it)
+			delete(byID, r.ItemID) // a repeated row costs no second open
+		}
+	}
+	return out, true
+}
+
 // loadReferenceImages picks one reference photo per item — role "ref", the
 // item's newest cashier-confirmed photo if it decodes, else its thumbnail:
 // the same choice and bytes core's loadReferenceImages sent — capped at
-// maxReferenceImages. The host allows maxImageOpens opens per event, failed
-// opens included, so in a catalog where few items have photos the plugin
-// looks at the first 64 items only (core walked the whole catalog). A
-// denial (no view:inventory), the quota or busy handles stop the walk; identify then runs
-// on the photo and catalog text alone.
+// maxReferenceImages. The items come in photoOrder when the till has
+// catalog.photos.v1, so a photographed item is sent whatever its name
+// (ut-docs#4094); otherwise in catalog name order, where the host's
+// maxImageOpens opens per event (failed opens included) reach only the
+// first 64 items. A denial (no view:inventory), the quota or busy handles
+// stop the walk; identify then runs on the photo and catalog text alone.
 func loadReferenceImages(items []ai.CatalogItem) []ai.RefImage {
+	if ordered, ok := photoOrder(items); ok {
+		items = ordered
+	}
 	refs := make([]ai.RefImage, 0, maxReferenceImages)
 	for i, it := range items {
 		if len(refs) >= maxReferenceImages || i >= maxImageOpens {

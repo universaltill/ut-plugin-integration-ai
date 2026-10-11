@@ -365,6 +365,8 @@ func TestManifestDeclaresEveryViewAndHook(t *testing.T) {
 		"sales.by_day.v1": "view:sales", "items.top.v1": "view:sales", "payments.breakdown.v1": "view:sales",
 		"stock.levels.v1": "view:inventory", "audit.summary.v1": "view:audit", "catalog.items.v1": "view:inventory",
 		"shop.context.v1": "view:sales",
+		// ut-docs#4094: identify's reference-photo order.
+		"catalog.photos.v1": "view:inventory",
 	}
 	used := map[string]bool{}
 	for _, v := range m.ViewsUsed {

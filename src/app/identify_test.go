@@ -4,6 +4,7 @@ package app
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -39,9 +40,13 @@ type catalogRow struct {
 }
 
 // catalogViews answers catalog.items.v1 pages from rows, recording each
-// call's args.
+// call's args. catalog.photos.v1 is unknown (-1), as on a till before
+// ut-docs#4094; photoViews adds it.
 func catalogViews(t *testing.T, rows []catalogRow, calls *[]map[string]int) func(string, json.RawMessage) (json.RawMessage, error) {
 	return func(name string, args json.RawMessage) (json.RawMessage, error) {
+		if name == photosView {
+			return nil, plugin.ErrNotFound
+		}
 		if name != "catalog.items.v1" {
 			t.Errorf("identify queried view %q", name)
 			return nil, plugin.ErrNotFound
@@ -465,5 +470,186 @@ func TestIdentifyConfirmed_Acks(t *testing.T) {
 	}
 	if len(h.Calls) != 0 {
 		t.Fatalf("no host calls expected: %v", sortedKeys(h.Calls))
+	}
+}
+
+type photoRow struct {
+	ItemID  string `json:"item_id"`
+	Source  string `json:"source"`
+	PhotoAt int64  `json:"photo_at"`
+}
+
+// photoViews answers catalog.items.v1 from rows and catalog.photos.v1 from
+// photos (already in the view's order), recording the photo view's args.
+func photoViews(t *testing.T, rows []catalogRow, photos []photoRow, photoArgs *[]map[string]int) func(string, json.RawMessage) (json.RawMessage, error) {
+	items := catalogViews(t, rows, nil)
+	return func(name string, args json.RawMessage) (json.RawMessage, error) {
+		if name != photosView {
+			return items(name, args)
+		}
+		var a map[string]int
+		if err := json.Unmarshal(args, &a); err != nil {
+			t.Fatalf("view args %s: %v", args, err)
+		}
+		if photoArgs != nil {
+			*photoArgs = append(*photoArgs, a)
+		}
+		off := min(a["offset"], len(photos))
+		end := min(off+a["limit"], len(photos))
+		return json.Marshal(photos[off:end])
+	}
+}
+
+// claudeRefBytes is a Claude endpoint that records which reference photos it
+// was sent (base64 of their test bytes; the camera photo is last) and
+// matches nothing.
+func claudeRefBytes(t *testing.T, got *[]string) func(plugin.HTTPRequest) (plugin.HTTPResponse, error) {
+	return func(req plugin.HTTPRequest) (plugin.HTTPResponse, error) {
+		var body struct {
+			Messages []struct {
+				Content []map[string]any `json:"content"`
+			} `json:"messages"`
+		}
+		if err := json.Unmarshal(req.Body, &body); err != nil {
+			t.Fatal(err)
+		}
+		for _, b := range body.Messages[0].Content {
+			if b["type"] == "image" {
+				*got = append(*got, b["source"].(map[string]any)["data"].(string))
+			}
+		}
+		return plugin.HTTPResponse{Status: 200, Body: []byte(`{"content":[{"type":"text","text":"{\"matches\":[],\"suggested_name\":\"\"}"}],"stop_reason":"end_turn"}`)}, nil
+	}
+}
+
+// ut-docs#4094, the owner's case: a 230-item catalog where the item at
+// alphabetical position 183 has the newest photo. With catalog.photos.v1
+// the plugin opens only photographed items, newest first, so that photo is
+// sent; items without a photo cost no open.
+func TestIdentify_ReferencePhotosFollowThePhotoView(t *testing.T) {
+	var rows []catalogRow
+	for i := range 230 {
+		rows = append(rows, catalogRow{ID: fmt.Sprintf("itm%03d", i), SKU: fmt.Sprintf("S%d", i), Name: fmt.Sprintf("Item %03d", i), Active: true})
+	}
+	h := newHost(t, map[string]string{"provider": "claude", "api_key": "sk-ant"})
+	h.Uploads[photoToken] = jpegPhoto
+	// The view's order: the newest photo (item 183) first, then 99 older
+	// thumbnails on items 100..198 (item 183 excepted), and one row for an
+	// item outside the active catalog, which must be skipped unopened.
+	photos := []photoRow{{ItemID: "itm183", Source: "thumb", PhotoAt: 2000}, {ItemID: "gone", Source: "thumb", PhotoAt: 1999}}
+	h.ItemImages["itm183"] = plugin.ItemImageFiles{Thumb: []byte("ITEM-183")}
+	for i := 100; i < 200; i++ {
+		if i == 183 {
+			continue
+		}
+		id := fmt.Sprintf("itm%03d", i)
+		photos = append(photos, photoRow{ItemID: id, Source: "thumb", PhotoAt: int64(1000 + i)})
+		h.ItemImages[id] = plugin.ItemImageFiles{Thumb: []byte{byte(i)}}
+	}
+	var photoArgs []map[string]int
+	h.Views = photoViews(t, rows, photos, &photoArgs)
+	var sent []string
+	h.HTTP = claudeRefBytes(t, &sent)
+	if _, err := dispatch(t, "catalog.identify", photoPayload()); err != nil {
+		t.Fatal(err)
+	}
+	if len(photoArgs) != 1 || photoArgs[0]["offset"] != 0 || photoArgs[0]["limit"] != photoViewLimit {
+		t.Fatalf("photo view calls = %v, want one page of %d", photoArgs, photoViewLimit)
+	}
+	refs := sent[:len(sent)-1] // the camera photo comes last
+	if len(refs) != maxReferenceImages {
+		t.Fatalf("reference photos sent = %d, want %d", len(refs), maxReferenceImages)
+	}
+	if want := base64.StdEncoding.EncodeToString([]byte("ITEM-183")); refs[0] != want {
+		t.Fatalf("first reference photo = %q, want item 183's (%q)", refs[0], want)
+	}
+	if got := h.Calls["item_image_open"]; got != maxReferenceImages {
+		t.Fatalf("item_image_open calls = %d, want %d (only photographed, active items)", got, maxReferenceImages)
+	}
+}
+
+// A photo view row whose open fails (the file no longer decodes) costs one
+// open and is skipped; the walk never passes the host's 64 opens.
+func TestIdentify_PhotoViewOpensStopAtHostCap(t *testing.T) {
+	var rows []catalogRow
+	var photos []photoRow
+	for i := range 200 {
+		id := fmt.Sprintf("itm%03d", i)
+		rows = append(rows, catalogRow{ID: id, SKU: "S", Name: "N", Active: true})
+		photos = append(photos, photoRow{ItemID: id, Source: "thumb", PhotoAt: int64(500 - i)})
+	}
+	h := newHost(t, map[string]string{"provider": "claude", "api_key": "sk-ant"})
+	h.Uploads[photoToken] = jpegPhoto
+	h.Views = photoViews(t, rows, photos, nil) // listed, but no file opens
+	var sent []string
+	h.HTTP = claudeRefBytes(t, &sent)
+	if _, err := dispatch(t, "catalog.identify", photoPayload()); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.Calls["item_image_open"]; got != maxImageOpens {
+		t.Fatalf("item_image_open calls = %d, want %d", got, maxImageOpens)
+	}
+	if len(sent) != 1 {
+		t.Fatalf("sent %d images, want only the camera photo", len(sent))
+	}
+}
+
+// A denied photo view (no grant) falls back to the catalog walk.
+func TestIdentify_PhotoViewDeniedFallsBackToCatalogOrder(t *testing.T) {
+	h := newHost(t, map[string]string{"provider": "claude", "api_key": "sk-ant"})
+	h.Uploads[photoToken] = jpegPhoto
+	items := catalogViews(t, []catalogRow{{ID: "a", SKU: "A", Name: "A", Active: true}}, nil)
+	h.Views = func(name string, args json.RawMessage) (json.RawMessage, error) {
+		if name == photosView {
+			return nil, plugin.ErrDenied
+		}
+		return items(name, args)
+	}
+	h.ItemImages["a"] = plugin.ItemImageFiles{Thumb: []byte("A")}
+	var sent []string
+	h.HTTP = claudeRefBytes(t, &sent)
+	if _, err := dispatch(t, "catalog.identify", photoPayload()); err != nil {
+		t.Fatal(err)
+	}
+	if len(sent) != 2 || sent[0] != base64.StdEncoding.EncodeToString([]byte("A")) {
+		t.Fatalf("sent = %v, want the camera photo and item a's", sent)
+	}
+}
+
+// A repeated photo view row costs no second open; an unreadable answer
+// falls back to the catalog walk.
+func TestIdentify_PhotoViewDuplicateRowsAndBadAnswer(t *testing.T) {
+	rows := []catalogRow{{ID: "a", SKU: "A", Name: "A", Active: true}, {ID: "b", SKU: "B", Name: "B", Active: true}}
+
+	h := newHost(t, map[string]string{"provider": "claude", "api_key": "sk-ant"})
+	h.Uploads[photoToken] = jpegPhoto
+	h.Views = photoViews(t, rows, []photoRow{{ItemID: "b", Source: "thumb", PhotoAt: 2}, {ItemID: "b", Source: "thumb", PhotoAt: 2}}, nil)
+	h.ItemImages["b"] = plugin.ItemImageFiles{Thumb: []byte("B")}
+	var sent []string
+	h.HTTP = claudeRefBytes(t, &sent)
+	if _, err := dispatch(t, "catalog.identify", photoPayload()); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.Calls["item_image_open"]; got != 1 || len(sent) != 2 {
+		t.Fatalf("duplicate row: %d opens, %d images; want 1 open, 1 reference", got, len(sent)-1)
+	}
+
+	h = newHost(t, map[string]string{"provider": "claude", "api_key": "sk-ant"})
+	h.Uploads[photoToken] = jpegPhoto
+	items := catalogViews(t, rows, nil)
+	h.Views = func(name string, args json.RawMessage) (json.RawMessage, error) {
+		if name == photosView {
+			return json.RawMessage(`{`), nil
+		}
+		return items(name, args)
+	}
+	h.ItemImages["b"] = plugin.ItemImageFiles{Thumb: []byte("B")}
+	sent = nil
+	h.HTTP = claudeRefBytes(t, &sent)
+	if _, err := dispatch(t, "catalog.identify", photoPayload()); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.Calls["item_image_open"]; got != 2 || len(sent) != 2 || sent[0] != base64.StdEncoding.EncodeToString([]byte("B")) {
+		t.Fatalf("bad answer: %d opens, sent %v; want the name-order walk (2 opens, item b's photo)", got, sent)
 	}
 }
