@@ -22,5 +22,21 @@
   "integration_ai.error.no_credit": "حساب شما نزد ارائه‌دهندهٔ هوش مصنوعی اعتباری ندارد. در حساب خود نزد ارائه‌دهنده اعتبار یا یک طرح پرداخت اضافه کنید و دوباره تلاش کنید.",
   "integration_ai.error.rate_limited": "ارائه‌دهندهٔ هوش مصنوعی شما الان شلوغ است یا درخواست‌ها را محدود می‌کند. یک دقیقه دیگر دوباره تلاش کنید.",
   "integration_ai.error.unreachable": "صندوق به ارائه‌دهندهٔ هوش مصنوعی شما دسترسی ندارد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.",
-  "integration_ai.error.provider_failed": "ارائه‌دهندهٔ هوش مصنوعی شما الان نتوانست پاسخ دهد. بعداً دوباره تلاش کنید؛ اگر ادامه داشت، نام مدل‌ها را در تنظیمات افزونهٔ دستیار هوش مصنوعی و حساب خود را نزد ارائه‌دهنده بررسی کنید."
+  "integration_ai.error.provider_failed": "ارائه‌دهندهٔ هوش مصنوعی شما الان نتوانست پاسخ دهد. بعداً دوباره تلاش کنید؛ اگر ادامه داشت، نام مدل‌ها را در تنظیمات افزونهٔ دستیار هوش مصنوعی و حساب خود را نزد ارائه‌دهنده بررسی کنید.",
+  "integration_ai.settings.provider": "ارائه‌دهندهٔ هوش مصنوعی",
+  "integration_ai.settings.provider.help": "جایی که هوش مصنوعی اجرا می‌شود. گزینهٔ «روی شبکهٔ خودم» همه‌چیز را روی سخت‌افزار خودتان نگه می‌دارد؛ ChatGPT و Claude از حساب خودتان نزد آن شرکت و با هزینهٔ خودتان استفاده می‌کنند.",
+  "integration_ai.settings.provider.self_hosted": "روی شبکهٔ خودم (Ollama)",
+  "integration_ai.settings.provider.openai": "ChatGPT (OpenAI)",
+  "integration_ai.settings.provider.claude": "Claude (Anthropic)",
+  "integration_ai.settings.provider.openai_compatible": "سرور سازگار با OpenAI خودم (LM Studio، vLLM، llama.cpp)",
+  "integration_ai.settings.endpoint": "نشانی سرور هوش مصنوعی",
+  "integration_ai.settings.endpoint.help": "نشانی وب سرور هوش مصنوعی خودتان، برای نمونه http://192.168.1.20:11434.",
+  "integration_ai.settings.vision_model": "مدل برای شناسایی با دوربین",
+  "integration_ai.settings.ask_model": "مدل برای «از صندوق بپرسید»",
+  "integration_ai.settings.model.help": "نام مدل را دقیقاً همان‌طور که ارائه‌دهنده‌تان فهرست کرده بنویسید.",
+  "integration_ai.settings.api_key": "کلید API",
+  "integration_ai.settings.api_key.help": "در حساب خود نزد ارائه‌دهنده یک کلید بسازید و اینجا جای‌گذاری کنید. رمزگذاری‌شده ذخیره می‌شود و دیگر نمایش داده نمی‌شود.",
+  "integration_ai.settings.image_provider": "حذف پس‌زمینه: سرویس",
+  "integration_ai.settings.image_endpoint": "حذف پس‌زمینه: نشانی سرویس",
+  "integration_ai.settings.image_model": "حذف پس‌زمینه: مدل"
 }

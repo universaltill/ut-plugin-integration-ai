@@ -31,8 +31,12 @@ comment wherever the plugin must differ.
   (fail-safe), a hosted provider without a key is "not configured", never
   Ollama, and `openai_compatible` without an endpoint is "not
   configured". A hosted provider is never the default, never on a
-  Universal Till account. `provider` stays a
-  plain-text setting — no new manifest "select" field type. New vendors
+  Universal Till account. `provider` is a `type: "choice"` dropdown
+  (ut-docs#2832, owner 2026-10-11 — supersedes "stays plain text"): its
+  options are exactly the adapters above, `endpoint`/`api_key` use
+  `show_when` so only the fields that apply show, and every setting has a
+  `label` key in `locales/*.json` (`validate.sh` enforces all three). An
+  older stored value outside the options keeps working as before (fail-safe). New vendors
   arrive as `src/ai` adapters reusing the same settings; a second key
   setting only with the per-capability adapter work ADR-0126 §6 requires.
 - **Egress only through the till** (`plugin.HTTP`): `net:@setting:endpoint`

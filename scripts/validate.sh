@@ -31,7 +31,30 @@ for k, dv in want.items():
         errs.append(f"setting {k} default changed ({settings[k].get('default_value')!r} != {dv!r})")
 if settings.get("api_key", {}).get("type") != "secret": errs.append("api_key must be type secret (ADR-0082)")
 if settings.get("endpoint", {}).get("type") != "endpoint": errs.append("endpoint must be type endpoint (ADR-0121 §2)")
-if settings.get("provider", {}).get("type"): errs.append("provider stays a plain-text setting (ADR-0126)")
+# provider is a dropdown (ut-docs#2832, owner 2026-10-11): exactly these
+# stored values — the plugin's fail-safe treats anything else as
+# self-hosted, so an option here must have an adapter in src/ai.
+pv = settings.get("provider", {})
+if pv.get("type") != "choice": errs.append("provider must be type choice (ut-docs#2832)")
+elif [o.get("value") for o in pv.get("options", [])] != ["self_hosted", "openai", "claude", "openai_compatible"]:
+    errs.append("provider options must be exactly self_hosted|openai|claude|openai_compatible (src/ai adapters)")
+# An older till refuses a manifest with `type: "choice"` (and fails
+# signature verification on any field it doesn't know), so the plugin must
+# name the first till release that understands it (ut-docs#2832).
+mpv = tuple(int(x) for x in re.findall(r'\d+', m.get("min_pos_version", "0"))[:3])
+if mpv < (0, 31, 9): errs.append("min_pos_version must be >= 0.31.9 (first till with choice settings, ut-docs#2832)")
+# Fields that don't apply to the chosen provider are hidden (show_when).
+sw = lambda k: settings.get(k, {}).get("show_when") or {}
+if sw("endpoint") != {"key": "provider", "in": ["self_hosted", "openai_compatible"]}: errs.append("endpoint shows for self_hosted/openai_compatible only")
+if sw("api_key") != {"key": "provider", "in": ["openai", "claude", "openai_compatible"]}: errs.append("api_key shows for openai/claude/openai_compatible only")
+# Every setting carries a translated label (a key in locales/en.json).
+en = json.load(open("locales/en.json"))
+for k, s in settings.items():
+    for f in ("label", "help"):
+        if f == "label" and not s.get(f): errs.append(f"setting {k} needs a label")
+        if s.get(f) and s[f] not in en: errs.append(f"setting {k} {f} {s[f]!r} missing from locales/en.json")
+    for o in s.get("options", []):
+        if o.get("label") not in en: errs.append(f"setting {k} option {o.get('value')} label missing from locales/en.json")
 # Background removal (ut-docs#3126): the till calls the shop's rembg itself,
 # so these settings are plain text. A `type: "endpoint"` image_endpoint would
 # give this WASM plugin's http:lan egress to the rembg host it never needs

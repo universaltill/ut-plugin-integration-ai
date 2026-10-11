@@ -22,5 +22,21 @@
   "integration_ai.error.no_credit": "Your AI provider account has no credit left. Add credit or a payment plan in your account with the provider, then try again.",
   "integration_ai.error.rate_limited": "Your AI provider is busy or limiting requests right now. Try again in a minute.",
   "integration_ai.error.unreachable": "The till can't reach your AI provider. Check the internet connection and try again.",
-  "integration_ai.error.provider_failed": "Your AI provider couldn't answer right now. Try again later; if it keeps happening, check the model names in the AI Assistant plugin's settings and your account with the provider."
+  "integration_ai.error.provider_failed": "Your AI provider couldn't answer right now. Try again later; if it keeps happening, check the model names in the AI Assistant plugin's settings and your account with the provider.",
+  "integration_ai.settings.provider": "AI provider",
+  "integration_ai.settings.provider.help": "Where the AI runs. On your own network keeps everything on your own hardware; ChatGPT and Claude use your own account with that company, at your own cost.",
+  "integration_ai.settings.provider.self_hosted": "On my own network (Ollama)",
+  "integration_ai.settings.provider.openai": "ChatGPT (OpenAI)",
+  "integration_ai.settings.provider.claude": "Claude (Anthropic)",
+  "integration_ai.settings.provider.openai_compatible": "My own OpenAI-compatible server (LM Studio, vLLM, llama.cpp)",
+  "integration_ai.settings.endpoint": "AI server address",
+  "integration_ai.settings.endpoint.help": "The web address of your own AI server, for example http://192.168.1.20:11434.",
+  "integration_ai.settings.vision_model": "Model for Identify by camera",
+  "integration_ai.settings.ask_model": "Model for Ask your till",
+  "integration_ai.settings.model.help": "Type the model name exactly as your provider lists it.",
+  "integration_ai.settings.api_key": "API key",
+  "integration_ai.settings.api_key.help": "Create a key in your account with the provider and paste it here. It is stored encrypted and never shown again.",
+  "integration_ai.settings.image_provider": "Background removal: service",
+  "integration_ai.settings.image_endpoint": "Background removal: service address",
+  "integration_ai.settings.image_model": "Background removal: model"
 }
