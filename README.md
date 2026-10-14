@@ -172,6 +172,12 @@ Known limits, compared with the till's built-in engine:
   photos first, newest first, so a photographed item is sent whatever its
   name. On an older till it falls back to the first 64 catalog items by
   name, the most it may open per identify.
+- Large catalogs: like the built-in engine, the model is sent the first
+  500 active items by name. With a hosted provider (Claude, OpenAI) the
+  plugin reads the whole catalog (up to 10,000 items, inactive ones
+  included), so a photographed item past the 500th
+  name is still sent and can be matched (ut-docs#4106). An item past the
+  500th name **without** a photo can't be matched yet (ut-docs#4288).
 - The till's audit log no longer gets an `ai_identify` / `ai_ask` row per
   use; it still records `ai_identify_confirmed` when a cashier picks a
   suggestion.
