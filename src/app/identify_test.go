@@ -653,3 +653,114 @@ func TestIdentify_PhotoViewDuplicateRowsAndBadAnswer(t *testing.T) {
 		t.Fatalf("bad answer: %d opens, sent %v; want the name-order walk (2 opens, item b's photo)", got, sent)
 	}
 }
+
+// ut-docs#4106: in a catalog of more than 500 active items, a photographed
+// item past name position 500 is opened, sent as a reference, listed in the
+// prompt's catalog and can be suggested — the photo view covers the whole
+// active catalog, not just the first 500 names.
+func TestIdentify_PhotographedItemPastFiveHundredIsMatchable(t *testing.T) {
+	var rows []catalogRow
+	for i := range 1200 {
+		rows = append(rows, catalogRow{ID: fmt.Sprintf("itm%04d", i), SKU: fmt.Sprintf("S%d", i), Name: fmt.Sprintf("Item %04d", i), Active: true})
+	}
+	h := newHost(t, map[string]string{"provider": "claude", "api_key": "sk-ant"})
+	h.Uploads[photoToken] = jpegPhoto
+	var photoArgs []map[string]int
+	h.Views = photoViews(t, rows, []photoRow{{ItemID: "itm0900", Source: "ai_ref", PhotoAt: 9}}, &photoArgs)
+	h.ItemImages["itm0900"] = plugin.ItemImageFiles{Thumb: []byte("ITEM-900")}
+	var system string
+	var sent []string
+	h.HTTP = func(req plugin.HTTPRequest) (plugin.HTTPResponse, error) {
+		var body struct {
+			System   []map[string]any `json:"system"`
+			Messages []struct {
+				Content []map[string]any `json:"content"`
+			} `json:"messages"`
+		}
+		if err := json.Unmarshal(req.Body, &body); err != nil {
+			t.Fatal(err)
+		}
+		system, _ = body.System[0]["text"].(string)
+		for _, b := range body.Messages[0].Content {
+			if b["type"] == "image" {
+				sent = append(sent, b["source"].(map[string]any)["data"].(string))
+			}
+		}
+		return plugin.HTTPResponse{Status: 200, Body: []byte(`{"content":[{"type":"text","text":"{\"matches\":[{\"item_id\":\"itm0900\",\"confidence\":\"high\"}],\"suggested_name\":\"\"}"}],"stop_reason":"end_turn"}`)}, nil
+	}
+	answer, err := dispatch(t, "catalog.identify", photoPayload())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(photoArgs) != 1 || photoArgs[0]["limit"] != 500 {
+		t.Fatalf("photo view calls = %v, want one page of 500 (the view's maximum)", photoArgs)
+	}
+	if len(sent) != 2 || sent[0] != base64.StdEncoding.EncodeToString([]byte("ITEM-900")) {
+		t.Fatalf("sent %d images, want item 900's reference and the camera photo", len(sent))
+	}
+	if !strings.Contains(system, `"id":"itm0900"`) {
+		t.Fatal("the referenced item is missing from the prompt's catalog")
+	}
+	if n := strings.Count(system, `"sku":`); n != 501 {
+		t.Fatalf("catalog items in prompt = %d, want the first 500 names plus the referenced item", n)
+	}
+	items := ofType(components(t, answer), "suggestions")
+	if len(items) != 1 {
+		t.Fatalf("answer = %v, want a suggestion for item 900", answer)
+	}
+	s := items[0]["items"].([]any)[0].(map[string]any)
+	if s["effect"].(map[string]any)["add_to_basket"].(map[string]any)["sku"] != "S900" {
+		t.Fatalf("suggestion = %v, want SKU S900", s)
+	}
+}
+
+// Ollama sends no reference photos, so it reads and sends core's 500 names
+// as before: one page, nothing past name 500.
+func TestIdentify_SelfHostedPromptKeepsFiveHundredNames(t *testing.T) {
+	var rows []catalogRow
+	for i := range 1200 {
+		rows = append(rows, catalogRow{ID: fmt.Sprintf("itm%04d", i), SKU: fmt.Sprintf("S%d", i), Name: fmt.Sprintf("Item %04d", i), Active: true})
+	}
+	h := newHost(t, ollamaSettings())
+	h.Uploads[photoToken] = jpegPhoto
+	var calls []map[string]int
+	h.Views = catalogViews(t, rows, &calls)
+	var prompt string
+	h.HTTP = ollamaAnswering(t, map[string]any{"matches": []any{}, "suggested_name": ""}, &prompt)
+	if _, err := dispatch(t, "catalog.identify", photoPayload()); err != nil {
+		t.Fatal(err)
+	}
+	if len(calls) != 1 {
+		t.Fatalf("catalog view calls = %v, want one page", calls)
+	}
+	if n := strings.Count(prompt, `"sku":`); n != 500 {
+		t.Fatalf("catalog items in prompt = %d, want 500", n)
+	}
+	if strings.Contains(prompt, "itm0500") {
+		t.Fatal("item past name 500 in the self-hosted prompt")
+	}
+}
+
+// A hosted provider's catalog read stops at maxCatalogPages pages, so with
+// the photo view it stays well inside the event's 64 view calls.
+func TestIdentify_HostedCatalogReadIsBounded(t *testing.T) {
+	var rows []catalogRow
+	for i := range maxCatalogPages*catalogPage + 500 {
+		rows = append(rows, catalogRow{ID: fmt.Sprintf("itm%05d", i), SKU: fmt.Sprintf("S%d", i), Name: "N", Active: true})
+	}
+	h := newHost(t, map[string]string{"provider": "claude", "api_key": "sk-ant"})
+	h.Uploads[photoToken] = jpegPhoto
+	h.ItemImages["itm09999"] = plugin.ItemImageFiles{Thumb: []byte("LAST")}
+	h.Views = photoViews(t, rows, []photoRow{{ItemID: "itm09999", Source: "thumb", PhotoAt: 1}, {ItemID: "itm10000", Source: "thumb", PhotoAt: 1}}, nil)
+	var sent []string
+	h.HTTP = claudeRefBytes(t, &sent)
+	if _, err := dispatch(t, "catalog.identify", photoPayload()); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.Calls["view_query"]; got != maxCatalogPages+1 {
+		t.Fatalf("view_query calls = %d, want %d catalog pages + the photo view", got, maxCatalogPages+1)
+	}
+	if len(sent) != 2 || sent[0] != base64.StdEncoding.EncodeToString([]byte("LAST")) {
+		t.Fatalf("sent %d images, want the last readable item's reference and the camera photo", len(sent))
+	}
+}

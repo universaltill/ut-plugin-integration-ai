@@ -22,7 +22,10 @@ import (
 const (
 	// maxPhotoBytes is core's maxIdentifyPhotoBytes.
 	maxPhotoBytes = 4 << 20
-	// maxCatalogItems is core's SearchActiveItems limit.
+	// maxCatalogItems is core's SearchActiveItems limit: the names every
+	// provider's prompt carries. A provider that sends reference photos
+	// also lists each referenced item past it (ut-docs#4106, see
+	// promptCatalog) — another place the plugin differs from core.
 	maxCatalogItems = 500
 	// catalogPage is catalog.items.v1's largest page; maxCatalogPages bounds
 	// the paging (each page is one of the event's 64 view_query calls).
@@ -37,12 +40,10 @@ const (
 	// confirmed photos first, newest first (ut-docs#4094). A till without
 	// it answers -1; the plugin then walks the catalog in name order.
 	photosView = "catalog.photos.v1"
-	// photoViewLimit is the one page read from photosView: twice the
-	// reference cap, so a few rows outside the active catalog (past its
-	// 500-item cap) don't shrink the set much; the open cap bounds the walk.
-	// A catalog of over 500 items whose photos sit mostly past the first
-	// 500 names can still get fewer than 60 (not a regression).
-	photoViewLimit = 2 * maxReferenceImages
+	// photoViewLimit is the one page read from photosView: the view's
+	// largest. The walk opens at most maxImageOpens of its rows, so one page
+	// always outlasts the open cap and paging would never be reached.
+	photoViewLimit = 500
 	// maxSKUBytes is the add_to_basket SKU bound.
 	maxSKUBytes = 128
 )
@@ -79,7 +80,14 @@ func handleIdentify(e plugin.Event) (any, error) {
 	}
 
 	progress(15, "integration_ai.identify.reading_catalog")
-	items, err := activeCatalog()
+	// A provider that sends reference photos reads the whole active catalog,
+	// so a photographed item past name 500 is found (ut-docs#4106); the
+	// others read core's 500 as before.
+	limit := maxCatalogItems
+	if svc.UsesReferenceImages() {
+		limit = 0
+	}
+	items, err := activeCatalog(limit)
 	if err != nil {
 		return nil, fmt.Errorf("catalog unavailable: %w", err)
 	}
@@ -88,6 +96,7 @@ func handleIdentify(e plugin.Event) (any, error) {
 	if svc.UsesReferenceImages() {
 		progress(30, "integration_ai.identify.reading_references")
 		refs = loadReferenceImages(items)
+		items = promptCatalog(items, refs)
 	}
 
 	progress(45, "integration_ai.identify.searching")
@@ -151,9 +160,10 @@ type catalogItemRow struct {
 }
 
 // activeCatalog pages catalog.items.v1 (every item, inactive included) and
-// keeps the first maxCatalogItems active ones — core's
-// SearchActiveItems("", 0, 500).
-func activeCatalog() ([]ai.CatalogItem, error) {
+// keeps the first limit active ones — core's SearchActiveItems("", 0, 500)
+// for limit maxCatalogItems — or, for limit 0, every active item within
+// the first maxCatalogPages pages (10,000 rows, inactive ones included).
+func activeCatalog(limit int) ([]ai.CatalogItem, error) {
 	items := make([]ai.CatalogItem, 0, 64)
 	for page := range maxCatalogPages {
 		raw, err := plugin.ViewQuery("catalog.items.v1", map[string]int{"offset": page * catalogPage, "limit": catalogPage})
@@ -169,15 +179,47 @@ func activeCatalog() ([]ai.CatalogItem, error) {
 				continue
 			}
 			items = append(items, ai.CatalogItem{ID: r.ID, SKU: r.SKU, Name: r.Name})
-			if len(items) == maxCatalogItems {
+			if len(items) == limit {
 				return items, nil
 			}
 		}
 		if len(rows) < catalogPage {
-			break
+			return items, nil
 		}
 	}
+	if limit == 0 {
+		plugin.Logf("ai identify: catalog read stopped at %d rows; items past them can't be matched", maxCatalogPages*catalogPage)
+	}
 	return items, nil
+}
+
+// promptCatalog is the catalog the model sees: the first maxCatalogItems
+// active items by name, as core sent, plus each referenced item past them,
+// so a reference photo always names an item the model may return and
+// identifyDocument can suggest (ut-docs#4106). At most maxReferenceImages
+// items are added.
+func promptCatalog(items []ai.CatalogItem, refs []ai.RefImage) []ai.CatalogItem {
+	if len(items) <= maxCatalogItems {
+		return items
+	}
+	out := items[:maxCatalogItems:maxCatalogItems]
+	listed := make(map[string]bool, maxCatalogItems)
+	for _, it := range out {
+		listed[it.ID] = true
+	}
+	referenced := make(map[string]bool, len(refs))
+	for _, r := range refs {
+		if !listed[r.ItemID] {
+			referenced[r.ItemID] = true
+		}
+	}
+	for _, it := range items[maxCatalogItems:] {
+		if referenced[it.ID] {
+			out = append(out, it)
+			delete(referenced, it.ID)
+		}
+	}
+	return out
 }
 
 type photoViewRow struct {
