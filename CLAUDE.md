@@ -66,7 +66,8 @@ comment wherever the plugin must differ.
 Release = tag `v<version>` matching `manifest.json`, cut by
 `auto-tag-release.yml` on merge. **Any PR that changes what ships —
 `manifest.json`, `README.md`, `LICENSE`, `locales/`, anything under `src/`,
-`go.mod`/`go.sum` or `scripts/build.sh` (they produce `bin/plugin.wasm`) —
+`go.mod`/`go.sum` or `scripts/build.sh` (they produce `bin/plugin.wasm`),
+or `scripts/package.sh` (the packaging recipe, ut-docs#5147) —
 must bump `manifest.json`'s `version` in the same PR**, or it lands on
 `main` and silently never ships (ut-docs#1940). Enforced by
 `scripts/check-version-bump.sh` (CI job `version-bump`, PRs only); `docs/`,
