@@ -93,14 +93,18 @@ func viewTool(view string, args map[string]int) (any, error) {
 // red-line: identity-free aggregates only — no customer data, and the
 // audit view returns counts, not payloads. Names, descriptions and
 // parameter schemas are core's.
-func askTools() []ai.AskTool {
+func askTools() []ai.AskTool { return askToolsWith(&collector{}) }
+
+// askToolsWith is askTools plus the catalog tools (ut-docs#4128), which
+// record what they found and proposed in c.
+func askToolsWith(c *collector) []ai.AskTool {
 	days := map[string]any{
 		"type": "object",
 		"properties": map[string]any{
 			"days": map[string]any{"type": "integer", "description": "how many days back to look (1-365)"},
 		},
 	}
-	return []ai.AskTool{
+	tools := []ai.AskTool{
 		{
 			Name:        "sales_by_day",
 			Description: "Daily sales totals: per day the number of completed sales, revenue total and tax total (minor units). Returns/refunds are excluded, not netted.",
@@ -148,6 +152,7 @@ func askTools() []ai.AskTool {
 			},
 		},
 	}
+	return append(tools, catalogTools(c)...)
 }
 
 // uiPayload is ui.view.ask / ui.action.ask / the job's payload.
@@ -241,7 +246,8 @@ func handleAskJob(e plugin.Event) (any, error) {
 		return askPanel(q, notice("error", "integration_ai.ask.question_invalid")), nil
 	}
 	progress(10, "integration_ai.ask.thinking")
-	answer, err := svc.Ask(q, shopContext(), askTools())
+	found := &collector{}
+	answer, err := svc.Ask(q, shopContext(), askToolsWith(found))
 	if err != nil {
 		plugin.Logf("ai ask failed (%s): %v", ai.Kind(err), err)
 		k := failureKey(svc, err)
@@ -254,5 +260,8 @@ func handleAskJob(e plugin.Event) (any, error) {
 	for _, c := range chunks(truncate(strings.TrimSpace(answer), maxAnswerBytes), maxLiteralBytes) {
 		rest = append(rest, text(literal(c)))
 	}
+	// What the catalog tools found and proposed: core draws the thumbnails,
+	// links and confirm cards from ids (ut-docs#4128).
+	rest = append(rest, found.components()...)
 	return askPanel(q, rest...), nil
 }
