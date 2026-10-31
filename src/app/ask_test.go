@@ -206,7 +206,7 @@ func TestAskJob_RunsToolLoopThroughViews(t *testing.T) {
 			for _, tl := range body.Tools {
 				names = append(names, tl["function"].(map[string]any)["name"].(string))
 			}
-			if strings.Join(names, ",") != "sales_by_day,top_items,payment_breakdown,stock_levels,till_activity_summary" {
+			if strings.Join(names, ",") != "sales_by_day,top_items,payment_breakdown,stock_levels,till_activity_summary,list_items_with_gaps,find_items,propose_item_changes" {
 				t.Errorf("tools = %v", names)
 			}
 			sys := body.Messages[0]["content"].(string)
@@ -388,6 +388,8 @@ func TestManifestDeclaresEveryViewAndHook(t *testing.T) {
 		"shop.context.v1": "view:sales",
 		// ut-docs#4094: identify's reference-photo order.
 		"catalog.photos.v1": "view:inventory",
+		// ut-docs#4128: the catalog tools' gap listing.
+		"catalog.gaps.v1": "view:inventory",
 	}
 	used := map[string]bool{}
 	for _, v := range m.ViewsUsed {
@@ -404,6 +406,16 @@ func TestManifestDeclaresEveryViewAndHook(t *testing.T) {
 	}
 	if len(m.ViewsUsed) != len(views) {
 		t.Errorf("views_used lists views the plugin never queries: %v", m.ViewsUsed)
+	}
+	// ut-docs#4128: the agent permissions are pinned, and the plugin needs a
+	// till that knows the item_list component and catalog.item.update.v1.
+	for _, p := range []string{"ai.agent", "ai.send.sales", "ai.send.catalog", "ai.send.stock", "ai.send.staff", "ai.tools.write:catalog"} {
+		if !perms[p] {
+			t.Errorf("manifest lacks permission %s", p)
+		}
+	}
+	if m.MinPOSVersion != "0.36.0" {
+		t.Errorf("min_pos_version = %q: must name the core release that ships ut-docs#4128 (item_list, catalog.gaps.v1, catalog.item.update.v1)", m.MinPOSVersion)
 	}
 	hooks := map[string]bool{}
 	for _, hk := range m.Hooks {
