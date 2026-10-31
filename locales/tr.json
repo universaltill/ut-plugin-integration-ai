@@ -5,6 +5,7 @@
   "integration_ai.ask.button": "Sor",
   "integration_ai.ask.thinking": "Düşünülüyor…",
   "integration_ai.ask.answer": "Yanıt",
+  "integration_ai.ask.confirm_hint": "Aşağıdaki değişikliği kontrol edin. Onayla düğmesine basana kadar hiçbir şey değişmez.",
   "integration_ai.ask.error": "Asistan şu anda yanıt veremedi — YZ sunucusunun çalıştığını kontrol edip tekrar deneyin.",
   "integration_ai.ask.question_invalid": "En fazla 500 karakterlik bir soru yazın.",
   "integration_ai.ask.unavailable": "Kasanıza sorun, mevcut YZ Asistanı ayarlarıyla kullanılamıyor.",

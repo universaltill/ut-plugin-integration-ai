@@ -5,6 +5,7 @@
   "integration_ai.ask.button": "Fragen",
   "integration_ai.ask.thinking": "Denkt nach…",
   "integration_ai.ask.answer": "Antwort",
+  "integration_ai.ask.confirm_hint": "Prüfen Sie die Änderung unten. Es wird erst etwas geändert, wenn Sie auf Bestätigen tippen.",
   "integration_ai.ask.error": "Der Assistent kann gerade nicht antworten – prüfen Sie, ob der KI-Server läuft, und versuchen Sie es erneut.",
   "integration_ai.ask.question_invalid": "Geben Sie eine Frage mit höchstens 500 Zeichen ein.",
   "integration_ai.ask.unavailable": "„Fragen Sie Ihre Kasse“ ist mit den aktuellen Einstellungen des KI-Assistenten nicht verfügbar.",
