@@ -5,6 +5,7 @@
   "integration_ai.ask.button": "Ask",
   "integration_ai.ask.thinking": "Thinking…",
   "integration_ai.ask.answer": "Answer",
+  "integration_ai.ask.confirm_hint": "Check the change below. Nothing changes until you press Confirm.",
   "integration_ai.ask.error": "The assistant could not answer right now — check that the AI server is running and try again.",
   "integration_ai.ask.question_invalid": "Type a question of up to 500 characters.",
   "integration_ai.ask.unavailable": "Ask your till is not available with the current AI Assistant settings.",

@@ -22,6 +22,9 @@ type ShopContext struct {
 	CurrencyCode     string
 	CurrencyDecimals int
 	Locale           string
+	// Extra is appended to the system prompt (the app layer's own
+	// instructions, e.g. for the settings tools).
+	Extra string
 }
 
 // asker is the optional provider capability behind "Ask your till". Only
@@ -51,6 +54,10 @@ const askTimeout = 120 * time.Second
 const maxToolRounds = 6
 
 func askSystemPrompt(shop ShopContext) string {
+	return askBasePrompt(shop) + shop.Extra
+}
+
+func askBasePrompt(shop ShopContext) string {
 	return fmt.Sprintf(
 		"You are the built-in assistant of a point-of-sale till in the shop %q. "+
 			"You answer the shop manager's questions about sales, stock and till activity "+
