@@ -10,12 +10,12 @@ import (
 	"testing"
 )
 
-// packLanguages are the language packs that ship with the till
-// (ut-plugin-language-*). The till loads this plugin's locales/<code>.json
-// as an overlay for that UI language (core's syncLocales), so a pack
+// bundleLanguages are the languages tills commonly run in (the Weblate
+// bundles de, es, pt). The till loads this plugin's locales/<code>.json
+// as an overlay for that UI language (core's syncLocales), so a bundle
 // language without a file shows the Ask panel and the identify notices in
 // English (ut-docs#4123).
-var packLanguages = []string{"de", "es", "pt"}
+var bundleLanguages = []string{"de", "es", "pt"}
 
 // brandOnly are values that legitimately read the same in every language.
 var brandOnly = map[string]bool{
@@ -25,7 +25,7 @@ var brandOnly = map[string]bool{
 
 func TestPackLanguageBundlesAreComplete(t *testing.T) {
 	en := enKeys(t)
-	for _, lang := range packLanguages {
+	for _, lang := range bundleLanguages {
 		t.Run(lang, func(t *testing.T) {
 			raw, err := os.ReadFile(filepath.Join(repoRoot(t), "locales", lang+".json"))
 			if err != nil {
