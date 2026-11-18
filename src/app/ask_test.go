@@ -206,7 +206,7 @@ func TestAskJob_RunsToolLoopThroughViews(t *testing.T) {
 			for _, tl := range body.Tools {
 				names = append(names, tl["function"].(map[string]any)["name"].(string))
 			}
-			if strings.Join(names, ",") != "sales_by_day,top_items,payment_breakdown,stock_levels,till_activity_summary" {
+			if strings.Join(names, ",") != "sales_by_day,top_items,payment_breakdown,stock_levels,till_activity_summary,settings_describe,settings_propose" {
 				t.Errorf("tools = %v", names)
 			}
 			sys := body.Messages[0]["content"].(string)
@@ -388,6 +388,8 @@ func TestManifestDeclaresEveryViewAndHook(t *testing.T) {
 		"shop.context.v1": "view:sales",
 		// ut-docs#4094: identify's reference-photo order.
 		"catalog.photos.v1": "view:inventory",
+		// ut-docs#4129: the settings tools' read view.
+		"settings.describe.v1": "view:shop",
 	}
 	used := map[string]bool{}
 	for _, v := range m.ViewsUsed {
@@ -404,6 +406,12 @@ func TestManifestDeclaresEveryViewAndHook(t *testing.T) {
 	}
 	if len(m.ViewsUsed) != len(views) {
 		t.Errorf("views_used lists views the plugin never queries: %v", m.ViewsUsed)
+	}
+	// ADR-0153: proposing needs ai.agent and the settings write area.
+	for _, p := range []string{"ai.agent", "ai.tools.write:settings"} {
+		if !perms[p] {
+			t.Errorf("manifest lacks %s", p)
+		}
 	}
 	hooks := map[string]bool{}
 	for _, hk := range m.Hooks {

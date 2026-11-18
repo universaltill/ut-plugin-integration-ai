@@ -5,6 +5,7 @@
   "integration_ai.ask.button": "Preguntar",
   "integration_ai.ask.thinking": "Pensando…",
   "integration_ai.ask.answer": "Respuesta",
+  "integration_ai.ask.confirm_hint": "Revise el cambio de abajo. No se cambia nada hasta que pulse Confirmar.",
   "integration_ai.ask.error": "El asistente no ha podido responder ahora mismo — compruebe que el servidor de IA está en marcha e inténtelo de nuevo.",
   "integration_ai.ask.question_invalid": "Escriba una pregunta de 500 caracteres como máximo.",
   "integration_ai.ask.unavailable": "«Pregunte a su caja» no está disponible con los ajustes actuales del plugin Asistente de IA.",

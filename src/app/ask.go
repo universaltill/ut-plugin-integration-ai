@@ -100,7 +100,7 @@ func askTools() []ai.AskTool {
 			"days": map[string]any{"type": "integer", "description": "how many days back to look (1-365)"},
 		},
 	}
-	return []ai.AskTool{
+	tools := []ai.AskTool{
 		{
 			Name:        "sales_by_day",
 			Description: "Daily sales totals: per day the number of completed sales, revenue total and tax total (minor units). Returns/refunds are excluded, not netted.",
@@ -148,6 +148,7 @@ func askTools() []ai.AskTool {
 			},
 		},
 	}
+	return append(tools, settingsTools()...)
 }
 
 // uiPayload is ui.view.ask / ui.action.ask / the job's payload.
@@ -241,7 +242,10 @@ func handleAskJob(e plugin.Event) (any, error) {
 		return askPanel(q, notice("error", "integration_ai.ask.question_invalid")), nil
 	}
 	progress(10, "integration_ai.ask.thinking")
-	answer, err := svc.Ask(q, shopContext(), askTools())
+	resetProposals()
+	shop := shopContext()
+	shop.Extra = settingsGuidance
+	answer, err := svc.Ask(q, shop, askTools())
 	if err != nil {
 		plugin.Logf("ai ask failed (%s): %v", ai.Kind(err), err)
 		k := failureKey(svc, err)
@@ -253,6 +257,14 @@ func handleAskJob(e plugin.Event) (any, error) {
 	rest := []component{component{"type": "heading", "text": key("integration_ai.ask.answer")}}
 	for _, c := range chunks(truncate(strings.TrimSpace(answer), maxAnswerBytes), maxLiteralBytes) {
 		rest = append(rest, text(literal(c)))
+	}
+	// Each proposal is drawn by the till as its own confirm card (it words
+	// the card; this plugin only names the proposal id).
+	if ids := takeProposals(); len(ids) > 0 {
+		rest = append(rest, text(key("integration_ai.ask.confirm_hint")))
+		for _, id := range ids {
+			rest = append(rest, component{"type": "confirm", "proposal": id})
+		}
 	}
 	return askPanel(q, rest...), nil
 }

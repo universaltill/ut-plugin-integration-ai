@@ -5,6 +5,7 @@
   "integration_ai.ask.button": "اسأل",
   "integration_ai.ask.thinking": "جارٍ التفكير…",
   "integration_ai.ask.answer": "الإجابة",
+  "integration_ai.ask.confirm_hint": "راجع التغيير أدناه. لن يتغيّر شيء حتى تضغط على تأكيد.",
   "integration_ai.ask.error": "تعذّر على المساعد الإجابة الآن — تأكد من أن خادم الذكاء الاصطناعي يعمل وحاول مجدداً.",
   "integration_ai.ask.question_invalid": "اكتب سؤالاً لا يتجاوز 500 حرف.",
   "integration_ai.ask.unavailable": "ميزة «اسأل صندوقك» غير متاحة مع إعدادات مساعد الذكاء الاصطناعي الحالية.",

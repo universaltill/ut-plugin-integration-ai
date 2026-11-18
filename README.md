@@ -5,7 +5,9 @@ Installing this plugin **switches on** Universal Till's AI features:
 - 📷 **Identify by camera** on the sale screen (barcode failed? photograph
   the product and pick the match),
 - 💬 **Ask your till** on the Reports page (plain-language questions
-  about sales, stock and till activity),
+  about sales, stock and till activity) — it also explains the till's
+  settings and, for a few safe on/off ones, proposes the change for you
+  to confirm,
 - ✂️ **Background removal** for item and category photos, run by your own
   [rembg](https://github.com/danielgatis/rembg) service — see
   [Background removal](#background-removal) below. The button on the
@@ -49,10 +51,13 @@ The till asks you to grant these at install:
 | `net:api.openai.com`, `net:api.anthropic.com` | used only when you set `provider` to `openai` or `claude` |
 | `view:inventory` | read item names, SKUs, which items have a photo and the reference photos themselves for identify, and stock levels for Ask |
 | `view:sales`, `view:audit` | read sales totals, best sellers, payment totals and till-activity counts for Ask (counts only — never customer data or audit details) |
+| `view:shop` | read the settings explanations (label, help, link, and the current value of non-secret settings) so Ask can explain any setting |
+| `ai.agent`, `ai.send.*` | mark this plugin as the AI assistant and let it be given sales, catalogue, stock, staff and till-activity data (the admin's per-class checkboxes, ADR-0153) |
+| `ai.tools.write:settings` | let Ask propose a change to a short allow-list of settings. Installs **not granted**: an admin grants it on this plugin's settings page. The till shows every change on its own confirmation card and applies it only after you press Confirm, as you, with the same audit entry as the Settings screen. Tax, payments, fiscal, users, updates and AI settings can never be changed this way |
 | `ui:slot:reports.panels`, `ui:page` | draw the Ask your till panel on Reports |
 
-Everything the plugin reads is read-only: it cannot change your catalog,
-sales or settings. A suggestion only adds an item to the basket when the
+Everything the plugin reads is read-only: it cannot change your catalog
+or sales, and it changes a setting only through the till's confirmation card. A suggestion only adds an item to the basket when the
 cashier taps it.
 
 Background removal needs no permission here: the till itself calls your

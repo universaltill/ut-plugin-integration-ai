@@ -5,6 +5,7 @@
   "integration_ai.ask.button": "بپرس",
   "integration_ai.ask.thinking": "در حال فکر کردن…",
   "integration_ai.ask.answer": "پاسخ",
+  "integration_ai.ask.confirm_hint": "تغییر زیر را بررسی کنید. تا وقتی تأیید را نزنید، هیچ چیز تغییر نمی‌کند.",
   "integration_ai.ask.error": "دستیار الان نتوانست پاسخ دهد — بررسی کنید سرور هوش مصنوعی روشن باشد و دوباره تلاش کنید.",
   "integration_ai.ask.question_invalid": "پرسشی با حداکثر ۵۰۰ نویسه بنویسید.",
   "integration_ai.ask.unavailable": "«از صندوق خود بپرسید» با تنظیمات کنونی دستیار هوش مصنوعی در دسترس نیست.",
