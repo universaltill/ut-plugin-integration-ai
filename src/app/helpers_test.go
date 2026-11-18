@@ -171,11 +171,12 @@ type manifestEntry struct {
 }
 
 type manifest struct {
-	ID          string          `json:"id"`
-	Permissions []string        `json:"permissions"`
-	ViewsUsed   []string        `json:"views_used"`
-	Entries     []manifestEntry `json:"entries"`
-	Hooks       []struct {
+	ID            string          `json:"id"`
+	Permissions   []string        `json:"permissions"`
+	MinPOSVersion string          `json:"min_pos_version"`
+	ViewsUsed     []string        `json:"views_used"`
+	Entries       []manifestEntry `json:"entries"`
+	Hooks         []struct {
 		Event string `json:"event"`
 	} `json:"hooks"`
 }

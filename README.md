@@ -40,7 +40,7 @@ Updating from 1.x keeps every value you saved.
 
 ## What the plugin may do (permissions)
 
-The till asks you to grant these at install:
+The till asks you to grant these at install (the admin grants `ai.tools.write:catalog` on the plugin's settings page, ADR-0153):
 
 | permission | why |
 |---|---|
@@ -49,11 +49,17 @@ The till asks you to grant these at install:
 | `net:api.openai.com`, `net:api.anthropic.com` | used only when you set `provider` to `openai` or `claude` |
 | `view:inventory` | read item names, SKUs, which items have a photo and the reference photos themselves for identify, and stock levels for Ask |
 | `view:sales`, `view:audit` | read sales totals, best sellers, payment totals and till-activity counts for Ask (counts only — never customer data or audit details) |
+| `ai.agent`, `ai.send.sales`, `ai.send.catalog`, `ai.send.stock`, `ai.send.staff` | mark this plugin as one that gives till data to an AI model, and name the kinds of data the AI Assistant settings page lets you switch on or off (the till checks them on every read) |
+| `ai.tools.write:catalog` | let the assistant PROPOSE changes to item name, price, category or barcode. Nothing is changed until you press Confirm on the till's own card, and only if your role may edit the catalog; a cashier can never confirm a change, and the item thumbnails and links are not shown to them |
 | `ui:slot:reports.panels`, `ui:page` | draw the Ask your till panel on Reports |
 
-Everything the plugin reads is read-only: it cannot change your catalog,
-sales or settings. A suggestion only adds an item to the basket when the
-cashier taps it.
+The plugin reads through read-only views and cannot change anything itself.
+The one thing it can do is ask the till to change catalog items (name, price,
+category, or a barcode for an item that has none): the till shows exactly what
+will change and applies it only after you press Confirm, under your own role.
+Questions such as "which items have no barcode?" are answered with item
+thumbnails and links drawn by the till. A suggestion only adds an item to the
+basket when the cashier taps it.
 
 Background removal needs no permission here: the till itself calls your
 rembg service with the `image_*` settings below; the plugin's code never
